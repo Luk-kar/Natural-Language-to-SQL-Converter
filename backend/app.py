@@ -142,15 +142,11 @@ def execute_query(sql: str):
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
-    try:
-        schema = get_schema()
-    except Exception as e:
-        schema = "No schema found."
-        result = {"error": str(e)}
 
     if request.method == "POST":
         question = request.form["question"]
         try:
+            schema = get_schema()
             sql = generate_sql(schema, question)
             execution_result = execute_query(sql)
 
@@ -162,7 +158,7 @@ def index():
         except Exception as e:
             result = {"error": str(e)}
 
-    return render_template("index.html", schema=schema, result=result)
+    return render_template("index.html", result=result)
 
 
 if __name__ == "__main__":
