@@ -15,6 +15,8 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD"),
 }
 
+MAX_ROWS_DISPLAY = 100
+
 # Initialize model and tokenizer
 model_path = "backend/models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf"
 
@@ -115,7 +117,7 @@ def execute_query(sql: str):
         if cur.description:  # For SELECT queries
             columns = [desc[0] for desc in cur.description]
             # Retrieve a maximum of 100 rows
-            results = cur.fetchmany(100)
+            results = cur.fetchmany(MAX_ROWS_DISPLAY)
             return {"columns": columns, "data": results}
         else:  # For non-SELECT queries
             conn.commit()
@@ -139,7 +141,13 @@ def index():
         question = request.form["question"]
         try:
             sql = generate_sql(schema, question)
-            result = {"question": question, "sql": sql, "execution": execute_query(sql)}
+            execution_result = execute_query(sql)
+
+            # Check if the execution result contains data and limit to 100 rows
+            if "data" in execution_result:
+                execution_result["data"] = execution_result["data"][:MAX_ROWS_DISPLAY]
+
+            result = {"question": question, "sql": sql, "execution": execution_result}
         except Exception as e:
             result = {"error": str(e)}
 
