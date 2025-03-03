@@ -1,0 +1,16 @@
+.
+├── backend
+│   ├── app.py
+│   ├── Dockerfile
+│   ├── index.html
+│   └── requirements.txt
+├── docker-compose.yml
+├── frontend
+│   └── templates
+├── models
+│   └── deepseek-coder-6.7b-instruct.Q4_K_M.gguf
+├── Pipfile
+├── populate_db.sh
+└── tree.txt
+
+4 directories, 9 files

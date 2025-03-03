@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  postgres_local:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: business
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend_local:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: ollama-postgres_local-1
+      DB_NAME: business
+      DB_USER: admin
+      DB_PASSWORD: secret
+    depends_on:
+      - postgres_local
+    volumes:
+      # Mount the model file from the host into the container
+      - ./models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf:/app/backend/models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf:ro
+
+volumes:
+  pgdata:

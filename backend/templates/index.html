@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NL2SQL MVP</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .section { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Natural Language to SQL Converter</h1>
+    
+    <div class="section">
+        <h2>Database Schema</h2>
+        <pre>{{ schema }}</pre>
+    </div>
+
+    <div class="section">
+        <form method="POST">
+            <h2>Ask a Question</h2>
+            <input type="text" name="question" style="width: 100%; padding: 8px;" 
+                   placeholder="e.g. Show me all customers from New York">
+            <button type="submit" style="margin-top: 10px;">Generate SQL</button>
+        </form>
+    </div>
+
+    {% if result %}
+    <div class="section">
+        <h2>Results</h2>
+        {% if result.error %}
+            <p style="color: red;">Error: {{ result.error }}</p>
+        {% else %}
+            <h3>Question:</h3>
+            <p>{{ result.question }}</p>
+            
+            <h3>Generated SQL:</h3>
+            <pre>{{ result.sql }}</pre>
+            
+            <h3>Execution Result:</h3>
+            {% if result.execution.error %}
+                <p style="color: red;">Execution Error: {{ result.execution.error }}</p>
+            {% elif result.execution.message %}
+                <p>{{ result.execution.message }}</p>
+            {% else %}
+                <table border="1">
+                    <tr>
+                        {% for col in result.execution.columns %}
+                            <th>{{ col }}</th>
+                        {% endfor %}
+                    </tr>
+                    {% for row in result.execution.data %}
+                        <tr>
+                            {% for val in row %}
+                                <td>{{ val }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endif %}
+        {% endif %}
+    </div>
+    {% endif %}
+</body>
+</html>
