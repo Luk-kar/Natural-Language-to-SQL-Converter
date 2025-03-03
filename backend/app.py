@@ -11,8 +11,8 @@ app = Flask(__name__)
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
     "database": os.getenv("DB_NAME"),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
+    "user": os.getenv("DB_USER_READONLY"),
+    "password": os.getenv("DB_PASSWORD_READONLY"),
 }
 
 MAX_ROWS_DISPLAY = 100
@@ -44,9 +44,14 @@ def get_schema():
         """
         )
 
+        results = cur.fetchall()
+
+        if not results:
+            raise ValueError("No tables or columns found in the public schema.")
+
         schema = []
         current_table = None
-        for table, column, dtype in cur.fetchall():
+        for table, column, dtype in results:
             if table != current_table:
                 schema.append(f"\nTable {table}:")
                 current_table = table
@@ -56,7 +61,7 @@ def get_schema():
 
     except Exception as e:
         logging.error(f"Schema retrieval error: {str(e)}")
-        return ""
+        raise  # Re-raise the exception for better error handling
     finally:
         if "conn" in locals():
             conn.close()
@@ -80,9 +85,9 @@ def generate_sql(schema: str, question: str) -> str:
 
             SQL Query:\n
             
-            REMEMBER TO NOT ADD ANY OTHER CODE THAN THE SQL QUERY!
+            DO NOT ADD ANY OTHER CODE THAN THE DATA QUERY LANGUAGE (DQL)!
             DO NOT ADD ANY COMMENTS OR DESCRIPTIONS!
-            DO NOT USE TEMPOARY TABLES OR VIEWS!
+            DO NOT USE TEMPORARY TABLES OR VIEWS!
             DO NOT USE ANY FUNCTIONS OR PROCEDURES!
             """
     )
@@ -101,10 +106,12 @@ def generate_sql(schema: str, question: str) -> str:
 
 
 def extract_sql(response_text: str) -> str:
-    match = re.search(
-        r"(SELECT|INSERT|UPDATE|DELETE).+?;", response_text, re.IGNORECASE | re.DOTALL
-    )
-    return match.group(0).strip() if match else response_text.strip()
+    match = re.search(r"(SELECT).+?;", response_text, re.IGNORECASE | re.DOTALL)
+
+    if match:
+        return match.group(0).strip()
+    else:
+        raise ValueError("Generated SQL does not contain a SELECT statement.")
 
 
 def execute_query(sql: str):
@@ -134,8 +141,12 @@ def execute_query(sql: str):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    schema = get_schema()
     result = None
+    try:
+        schema = get_schema()
+    except Exception as e:
+        schema = "No schema found."
+        result = {"error": str(e)}
 
     if request.method == "POST":
         question = request.form["question"]
