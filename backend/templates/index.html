@@ -117,18 +117,18 @@
     
                     // Handle analysis tab content loading
                     if (tabId === 'chart' && tabPane.getAttribute('data-loaded') === 'false') {
-                        fetch('/get_random_number')
+                        fetch('/get_last_sql')
                             .then(response => {
                                 if (!response.ok) throw new Error('Network error');
                                 return response.json();
                             })
                             .then(data => {
-                                tabPane.innerHTML = `Random number: ${data.number}`;
+                                tabPane.innerHTML = `Last Generated SQL:<br><pre>${data.sql}</pre>`;
                                 tabPane.setAttribute('data-loaded', 'true');
                             })
                             .catch(error => {
                                 console.error('Error:', error);
-                                tabPane.innerHTML = 'Error loading number';
+                                tabPane.innerHTML = 'Error loading SQL';
                             });
                     }
                 }

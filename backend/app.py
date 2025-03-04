@@ -5,11 +5,12 @@ import re
 import logging
 
 # Backend
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 import psycopg2
 from llama_cpp import Llama
 
 app = Flask(__name__)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24))  # <-- Add secret key
 
 # Configure database connection
 DB_CONFIG = {
@@ -187,8 +188,9 @@ def index():
         question = request.form["question"]
         try:
             schema = get_schema()
+
             if question.strip().upper().startswith("DESCRIBE:"):
-                # Remove the prefix for clarity if needed
+
                 stripped_question = question.strip()[len("DESCRIBE:") :].strip()
                 description = generate_describe(schema, stripped_question)
                 result = {"question": question, "describe": description}
@@ -196,12 +198,13 @@ def index():
                 sql = generate_sql(schema, question)
                 execution_result = execute_query(sql)
 
-                # Limit results to MAX_ROWS_DISPLAY if data exists
+                # Store SQL in session
+                session["last_sql"] = sql
+
                 if "data" in execution_result:
                     execution_result["data"] = execution_result["data"][
                         :MAX_ROWS_DISPLAY
                     ]
-
                 result = {
                     "question": question,
                     "sql": sql,
@@ -218,11 +221,10 @@ def index():
     )
 
 
-@app.route("/get_random_number")
-def get_random_number():
-    """Generate a random single-digit number"""
-    number = random.randint(0, 9)
-    return jsonify({"number": number})
+@app.route("/get_last_sql")
+def get_last_sql():
+    """Return the last generated SQL from session"""
+    return jsonify({"sql": session.get("last_sql", "No SQL queries generated yet")})
 
 
 if __name__ == "__main__":
