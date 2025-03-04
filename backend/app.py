@@ -18,7 +18,8 @@ DB_CONFIG = {
 MAX_ROWS_DISPLAY = 100
 
 # Initialize model and tokenizer
-model_path = "backend/models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf"
+model_name = "deepseek-coder-6.7b-instruct.Q4_K_M"
+model_path = f"backend/models/{model_name}.gguf"
 
 # Initialize the model
 llm = Llama(
@@ -55,11 +56,11 @@ def get_schema():
 
         schema = []
         current_table = None
-        for table, column, dtype in results:
+        for table, column, dtype, comment in results:  # Fixed unpacking
             if table != current_table:
                 schema.append(f"\nTable {table}:")
                 current_table = table
-            schema.append(f"- {column} ({dtype})")
+            schema.append(f"- {column} ({dtype}) '{comment}'")
 
         return "\n".join(schema)
 
@@ -162,7 +163,12 @@ def index():
         except Exception as e:
             result = {"error": str(e)}
 
-    return render_template("index.html", result=result)
+    return render_template(
+        "index.html",
+        result=result,
+        model_name=model_name,
+        db_name=DB_CONFIG["database"],
+    )
 
 
 if __name__ == "__main__":

@@ -6,6 +6,8 @@
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         .section { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
         pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+        .try-queries { margin-top: 10px; }
+        .try-queries button { margin-right: 5px; padding: 5px 10px; }
     </style>
 </head>
 <body>
@@ -13,51 +15,64 @@
 
     <div class="section">
         <form method="POST" style="position: relative;">
-            <h2>Ask a Question:</h2>
+            <h3>Ask a Question:</h3>
             <div style="position: relative; display: flex; align-items: center;">
-                <input type="text" name="question" style="width: 100%; padding: 8px; padding-right: 30px;" 
+                <input id="questionInput" type="text" name="question" style="width: 100%; padding: 8px; padding-right: 30px;" 
                        placeholder="e.g. Show me all customers from New York">
                 <span style="position: absolute; right: 10px; font-size: 18px; pointer-events: none;">🔍</span>
             </div>
-            <button type="submit" style="margin-top: 10px;">Generate SQL</button>
+            <button type="submit" style="margin-top: 10px;">Get answer!</button>
+            <div class="try-queries">
+                <h3>Try these queries:</h3>
+                <button type="button" onclick="setQuestion('Where does \'John Doe\' live?')">Where does 'John Doe' live?</button>
+                <button type="button" onclick="setQuestion('Show me all customers from New York.')">Show me all customers from New York.</button>
+                <p></p>
+            </div>
         </form>
-    </div>
-
-    {% if result %}
-    <div class="section">
-        <h2>Results</h2>
-        {% if result.error %}
-            <p style="color: red;">Error: {{ result.error }}</p>
-        {% else %}
-            <h3>Question:</h3>
-            <p>{{ result.question }}</p>
-            
-            <h3>Generated SQL:</h3>
-            <pre>{{ result.sql }}</pre>
-            
-            <h3>Execution Result:</h3>
-            {% if result.execution.error %}
-                <p style="color: red;">Execution Error: {{ result.execution.error }}</p>
-            {% elif result.execution.message %}
-                <p>{{ result.execution.message }}</p>
+        {% if result %}
+            {% if result.error %}
+                <p style="color: red;">Error: {{ result.error }}</p>
             {% else %}
-                <table border="1">
-                    <tr>
-                        {% for col in result.execution.columns %}
-                            <th>{{ col }}</th>
-                        {% endfor %}
-                    </tr>
-                    {% for row in result.execution.data %}
+
+                <pre>{{ result.sql }}</pre>
+                
+                {% if result.execution.error %}
+                    <p style="color: red;">Execution Error: {{ result.execution.error }}</p>
+                {% elif result.execution.message %}
+                    <p>{{ result.execution.message }}</p>
+                {% else %}
+                    <table border="1">
                         <tr>
-                            {% for val in row %}
-                                <td>{{ val }}</td>
+                            {% for col in result.execution.columns %}
+                                <th>{{ col }}</th>
                             {% endfor %}
                         </tr>
-                    {% endfor %}
-                </table>
+                        {% for row in result.execution.data %}
+                            <tr>
+                                {% for val in row %}
+                                    <td>{{ val }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </table>
+                {% endif %}
             {% endif %}
         {% endif %}
+    
+        <!-- Information Footnote -->
+        <p></p>
+        <div class="footnote">
+            <span>ⓘ</span>
+            This tool, built with llama_cpp and Flask, translates natural language queries into SQL for a PostgreSQL database. It leverages the <strong>{{ model_name }}</strong> model to interact with <strong>{{ db_name }}</strong>. To explore the database schema, refer to the ERD in the pgAdmin service.</a>
+        </div>
     </div>
-    {% endif %}
+
+
+    <script>
+        // Function to set the query in the text input field
+        function setQuestion(query) {
+            document.getElementById('questionInput').value = query;
+        }
+    </script>
 </body>
 </html>
