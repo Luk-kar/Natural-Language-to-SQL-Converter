@@ -1,9 +1,13 @@
+# Python
 import os
+import random
+import re
 import logging
-from flask import Flask, render_template, request
+
+# Backend
+from flask import Flask, render_template, request, jsonify
 import psycopg2
 from llama_cpp import Llama
-import re
 
 app = Flask(__name__)
 
@@ -212,6 +216,13 @@ def index():
         model_name=model_name,
         db_name=DB_CONFIG["database"],
     )
+
+
+@app.route("/get_random_number")
+def get_random_number():
+    """Generate a random single-digit number"""
+    number = random.randint(0, 9)
+    return jsonify({"number": number})
 
 
 if __name__ == "__main__":

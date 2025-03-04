@@ -43,7 +43,7 @@
             {% elif result.sql %}
                 <nav class="navbar">
                     <a href="#" class="tab-link active" data-tab="query-results">Query Results</a>
-                    <a href="#" class="tab-link" data-tab="analysis">Analysis</a>
+                    <a href="#" class="tab-link" data-tab="chart">Chart</a>
                 </nav>
                 <div class="tab-content">
                     <div id="query-results" class="tab-pane active">
@@ -71,7 +71,7 @@
                             <p style="color: red;">Error: No results found.</p>
                         {% endif %}
                     </div>
-                    <div id="analysis" class="tab-pane">
+                    <div id="chart" class="tab-pane" data-loaded="false">
                         Under construction
                     </div>
                 </div>
@@ -93,20 +93,45 @@
         function setQuestion(query) {
             document.getElementById('questionInput').value = query;
         }
-
-        // Tab handling
+    
+        // Tab handling with safety checks
         document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.tab-link').forEach(link => {
-                link.addEventListener('click', function(e) {
+            document.body.addEventListener('click', function(e) {
+                if (e.target.classList.contains('tab-link')) {
                     e.preventDefault();
-                    const tabId = this.getAttribute('data-tab');
+                    const tabId = e.target.getAttribute('data-tab');
+                    const tabPane = document.getElementById(tabId);
+    
+                    if (!tabPane) {
+                        console.error('Tab pane not found:', tabId);
+                        return;
+                    }
+    
                     // Deactivate all tabs
                     document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
                     document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+    
                     // Activate clicked tab
-                    this.classList.add('active');
-                    document.getElementById(tabId).classList.add('active');
-                });
+                    e.target.classList.add('active');
+                    tabPane.classList.add('active');
+    
+                    // Handle analysis tab content loading
+                    if (tabId === 'chart' && tabPane.getAttribute('data-loaded') === 'false') {
+                        fetch('/get_random_number')
+                            .then(response => {
+                                if (!response.ok) throw new Error('Network error');
+                                return response.json();
+                            })
+                            .then(data => {
+                                tabPane.innerHTML = `Random number: ${data.number}`;
+                                tabPane.setAttribute('data-loaded', 'true');
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                tabPane.innerHTML = 'Error loading number';
+                            });
+                    }
+                }
             });
         });
     </script>
