@@ -8,6 +8,11 @@
         pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
         .try-queries { margin-top: 10px; }
         .try-queries button { margin-right: 5px; padding: 5px 10px; }
+        .navbar { margin: 20px 0; border-bottom: 1px solid #ddd; }
+        .tab-link { display: inline-block; padding: 10px 15px; cursor: pointer; text-decoration: none; color: #333; }
+        .tab-link.active { border-bottom: 2px solid #007bff; color: #007bff; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
     </style>
 </head>
 <body>
@@ -36,31 +41,40 @@
             {% elif result.describe %}
             <div style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">{{ result.describe }}</div>
             {% elif result.sql %}
-
-                <pre>{{ result.sql }}</pre>
-                
-                {% if result.execution.error %}
-                    <p style="color: red;">Execution Error: {{ result.execution.error }}</p>
-                {% elif result.execution.message %}
-                    <p>{{ result.execution.message }}</p>
-                {% elif result.execution.columns and result.execution.data %}
-                    <table border="1">
-                        <tr>
-                            {% for col in result.execution.columns %}
-                                <th>{{ col }}</th>
-                            {% endfor %}
-                        </tr>
-                        {% for row in result.execution.data %}
-                            <tr>
-                                {% for val in row %}
-                                    <td>{{ val }}</td>
+                <nav class="navbar">
+                    <a href="#" class="tab-link active" data-tab="query-results">Query Results</a>
+                    <a href="#" class="tab-link" data-tab="analysis">Analysis</a>
+                </nav>
+                <div class="tab-content">
+                    <div id="query-results" class="tab-pane active">
+                        <pre>{{ result.sql }}</pre>
+                        {% if result.execution.error %}
+                            <p style="color: red;">Execution Error: {{ result.execution.error }}</p>
+                        {% elif result.execution.message %}
+                            <p>{{ result.execution.message }}</p>
+                        {% elif result.execution.columns and result.execution.data %}
+                            <table border="1">
+                                <tr>
+                                    {% for col in result.execution.columns %}
+                                        <th>{{ col }}</th>
+                                    {% endfor %}
+                                </tr>
+                                {% for row in result.execution.data %}
+                                    <tr>
+                                        {% for val in row %}
+                                            <td>{{ val }}</td>
+                                        {% endfor %}
+                                    </tr>
                                 {% endfor %}
-                            </tr>
-                        {% endfor %}
-                    </table>
-                {% else %}
-                    <p style="color: red;">Error: No results found.</p>
-                {% endif %}
+                            </table>
+                        {% else %}
+                            <p style="color: red;">Error: No results found.</p>
+                        {% endif %}
+                    </div>
+                    <div id="analysis" class="tab-pane">
+                        Under construction
+                    </div>
+                </div>
             {% else %}
                 <p style="color: red;">Error: No results found.</p>
             {% endif %}
@@ -76,10 +90,25 @@
 
 
     <script>
-        // Function to set the query in the text input field
         function setQuestion(query) {
             document.getElementById('questionInput').value = query;
         }
+
+        // Tab handling
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.tab-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const tabId = this.getAttribute('data-tab');
+                    // Deactivate all tabs
+                    document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active'));
+                    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+                    // Activate clicked tab
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+        });
     </script>
 </body>
 </html>
