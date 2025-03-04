@@ -39,6 +39,7 @@ def get_schema():
         cur.execute(
             """
             SELECT 
+                table_schema,
                 table_name, 
                 column_name, 
                 data_type, 
@@ -56,9 +57,9 @@ def get_schema():
 
         schema = []
         current_table = None
-        for table, column, dtype, comment in results:  # Fixed unpacking
+        for table_schema, table, column, dtype, comment in results:  # Fixed unpacking
             if table != current_table:
-                schema.append(f"\nTable {table}:")
+                schema.append(f"\nTable {table_schema}.{table}:")
                 current_table = table
             schema.append(f"- {column} ({dtype}) '{comment}'")
 
@@ -119,6 +120,37 @@ def extract_sql(response_text: str) -> str:
         raise ValueError("Generated SQL does not contain a SELECT statement.")
 
 
+def generate_describe(schema: str, question: str) -> str:
+    """Generate a description about the database structure using the LLM model"""
+    if not schema:
+        schema_part = ""
+    else:
+        schema_part = f"""Database schema:
+    {schema}
+    """
+        prompt = (
+            schema_part
+            + f"""
+
+    {question}
+
+    Describe the structure of the database in a way that anyone can understand. 
+    Focus on what kind of information is stored and how it is organized, without using technical terms. 
+    For example, explain what kinds of records exist and how they relate to each other. 
+    DO NOT USE ANY PROGRAMMING CODE OR SQL QUERIES!
+    BE CONCISE!
+    DO NOT START WITH: 'Answer:', 'Solution', '.etc'
+    """
+        )
+    response = llm.create_completion(
+        prompt=prompt,
+        max_tokens=256,
+        temperature=0.7,
+        stop=["</s>"],
+    )
+    return response["choices"][0]["text"].strip()
+
+
 def execute_query(sql: str):
     """Execute SQL query on PostgreSQL"""
     try:
@@ -128,8 +160,7 @@ def execute_query(sql: str):
 
         if cur.description:  # For SELECT queries
             columns = [desc[0] for desc in cur.description]
-            # Retrieve a maximum of 100 rows
-            results = cur.fetchmany(MAX_ROWS_DISPLAY)
+            results = cur.fetchall()
             return {"columns": columns, "data": results}
         else:  # For non-SELECT queries
             conn.commit()
@@ -152,14 +183,26 @@ def index():
         question = request.form["question"]
         try:
             schema = get_schema()
-            sql = generate_sql(schema, question)
-            execution_result = execute_query(sql)
+            if question.strip().upper().startswith("DESCRIBE:"):
+                # Remove the prefix for clarity if needed
+                stripped_question = question.strip()[len("DESCRIBE:") :].strip()
+                description = generate_describe(schema, stripped_question)
+                result = {"question": question, "describe": description}
+            else:
+                sql = generate_sql(schema, question)
+                execution_result = execute_query(sql)
 
-            # Check if the execution result contains data and limit to 100 rows
-            if "data" in execution_result:
-                execution_result["data"] = execution_result["data"][:MAX_ROWS_DISPLAY]
+                # Limit results to MAX_ROWS_DISPLAY if data exists
+                if "data" in execution_result:
+                    execution_result["data"] = execution_result["data"][
+                        :MAX_ROWS_DISPLAY
+                    ]
 
-            result = {"question": question, "sql": sql, "execution": execution_result}
+                result = {
+                    "question": question,
+                    "sql": sql,
+                    "execution": execution_result,
+                }
         except Exception as e:
             result = {"error": str(e)}
 

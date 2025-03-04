@@ -26,13 +26,16 @@
                 <h3>Try these queries:</h3>
                 <button type="button" onclick="setQuestion('Where does \'John Doe\' live?')">Where does 'John Doe' live?</button>
                 <button type="button" onclick="setQuestion('Show me all customers from New York.')">Show me all customers from New York.</button>
+                <button type="button" onclick="setQuestion('DESCRIBE: What is the structure of the database?')">DESCRIBE: What is the structure of the database?</button>
                 <p></p>
             </div>
         </form>
         {% if result %}
             {% if result.error %}
                 <p style="color: red;">Error: {{ result.error }}</p>
-            {% else %}
+            {% elif result.describe %}
+            <div style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">{{ result.describe }}</div>
+            {% elif result.sql %}
 
                 <pre>{{ result.sql }}</pre>
                 
@@ -40,7 +43,7 @@
                     <p style="color: red;">Execution Error: {{ result.execution.error }}</p>
                 {% elif result.execution.message %}
                     <p>{{ result.execution.message }}</p>
-                {% else %}
+                {% elif result.execution.columns and result.execution.data %}
                     <table border="1">
                         <tr>
                             {% for col in result.execution.columns %}
@@ -55,7 +58,11 @@
                             </tr>
                         {% endfor %}
                     </table>
+                {% else %}
+                    <p style="color: red;">Error: No results found.</p>
                 {% endif %}
+            {% else %}
+                <p style="color: red;">Error: No results found.</p>
             {% endif %}
         {% endif %}
     
