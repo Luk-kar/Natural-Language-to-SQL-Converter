@@ -12,10 +12,13 @@
     <h1>Natural Language to SQL Converter</h1>
 
     <div class="section">
-        <form method="POST">
-            <h2>Ask a Question</h2>
-            <input type="text" name="question" style="width: 100%; padding: 8px;" 
-                   placeholder="e.g. Show me all customers from New York">
+        <form method="POST" style="position: relative;">
+            <h2>Ask a Question:</h2>
+            <div style="position: relative; display: flex; align-items: center;">
+                <input type="text" name="question" style="width: 100%; padding: 8px; padding-right: 30px;" 
+                       placeholder="e.g. Show me all customers from New York">
+                <span style="position: absolute; right: 10px; font-size: 18px; pointer-events: none;">🔍</span>
+            </div>
             <button type="submit" style="margin-top: 10px;">Generate SQL</button>
         </form>
     </div>

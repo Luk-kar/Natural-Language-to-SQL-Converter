@@ -1,5 +1,5 @@
 -- Create a read-only user
-DO $$ BEGIN IF NOT EXISTS (
+DO $ $ BEGIN IF NOT EXISTS (
     SELECT
     FROM
         pg_catalog.pg_roles
@@ -9,7 +9,7 @@ DO $$ BEGIN IF NOT EXISTS (
 
 END IF;
 
-END $$;
+END $ $;
 
 -- Grant SELECT privileges on all existing tables in 'business' database
 GRANT CONNECT ON DATABASE business TO readonly_user;
@@ -27,10 +27,10 @@ SELECT
 
 -- Init sample db
 CREATE TABLE customers (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100),
-    email VARCHAR(100),
-    city VARCHAR(50)
+    id SERIAL PRIMARY KEY COMMENT 'A unique identifier for the customer.',
+    name VARCHAR(100) COMMENT 'Stores the customer''s full name, can be non-unique. Note that in many cultures the name may be composed differently or may not clearly split into “first” and “last” components.',
+    email VARCHAR(100) COMMENT 'A unique identifier for the customer.',
+    city VARCHAR(50) COMMENT 'A categorical variable, meaning it belongs to a finite set of possible values (e.g., "New York", "London", "Paris").'
 );
 
 INSERT INTO

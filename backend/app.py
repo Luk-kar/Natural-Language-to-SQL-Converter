@@ -37,11 +37,15 @@ def get_schema():
         # Get tables and columns
         cur.execute(
             """
-            SELECT table_name, column_name, data_type 
+            SELECT 
+                table_name, 
+                column_name, 
+                data_type, 
+                col_description((table_schema || '.' || table_name)::regclass, ordinal_position) AS column_comment
             FROM information_schema.columns 
             WHERE table_schema = 'public'
             ORDER BY table_name, ordinal_position;
-        """
+            """
         )
 
         results = cur.fetchall()
