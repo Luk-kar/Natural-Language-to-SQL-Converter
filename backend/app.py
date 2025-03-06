@@ -198,9 +198,6 @@ def index():
                 sql = generate_sql(schema, question)
                 execution_result = execute_query(sql)
 
-                # Store SQL in session
-                session["last_sql"] = sql
-
                 if "data" in execution_result:
                     execution_result["data"] = execution_result["data"][
                         :MAX_ROWS_DISPLAY
@@ -210,6 +207,8 @@ def index():
                     "sql": sql,
                     "execution": execution_result,
                 }
+
+                session["result"] = result
         except Exception as e:
             result = {"error": str(e)}
 
@@ -224,7 +223,14 @@ def index():
 @app.route("/get_last_sql")
 def get_last_sql():
     """Return the last generated SQL from session"""
-    return jsonify({"sql": session.get("last_sql", "No SQL queries generated yet")})
+    result = session.get("result")
+    # Extract SQL if result exists and contains 'sql', else default message
+    sql = (
+        result.get("sql", "No SQL queries generated yet")
+        if result
+        else "No SQL queries generated yet"
+    )
+    return jsonify({"sql": sql})
 
 
 if __name__ == "__main__":
