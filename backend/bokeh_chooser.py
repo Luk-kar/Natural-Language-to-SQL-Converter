@@ -1,6 +1,12 @@
+"""
+This module contains a function that runs a plotting function based on the
+provided JSON/dict configuration.
+"""
+
+# Third-party
 import pandas as pd
 
-from backend.bokeh_charts_examples import (
+from backend.bokeh_charts import (
     plot_bar,
     plot_heatmap,
     plot_treemap,

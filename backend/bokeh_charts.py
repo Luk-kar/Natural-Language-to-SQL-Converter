@@ -1,5 +1,19 @@
+"""
+Top 10 Bokeh Charts for Data Visualization
+"""
+
+# Python
+from math import pi
+from typing import List
+
+# Third-party
 import numpy as np
 import pandas as pd
+from scipy.stats import gaussian_kde
+from squarify import normalize_sizes, squarify
+import colorcet as cc
+
+# Bokeh - Core and Models
 from bokeh.models import (
     ColumnDataSource,
     Grid,
@@ -15,14 +29,13 @@ from bokeh.models import (
     Legend,
     LegendItem,
 )
+
+# Bokeh - Palettes and Plotting
 from bokeh.palettes import tol, Category10, Category20, Category20c
 from bokeh.plotting import figure
 from bokeh.transform import linear_cmap, factor_cmap, cumsum
-from math import pi
-from typing import List
-from scipy.stats import gaussian_kde
-from squarify import normalize_sizes, squarify
-import colorcet as cc
+
+# Numpy Specific
 from numpy import linspace
 
 

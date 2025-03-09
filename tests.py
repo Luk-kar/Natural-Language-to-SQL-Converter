@@ -3,7 +3,7 @@ from bokeh.models import Plot
 import pandas as pd
 import numpy as np
 
-from backend.bokeh_charts_examples import (
+from backend.bokeh_charts import (
     plot_bar,
     plot_heatmap,
     plot_treemap,
