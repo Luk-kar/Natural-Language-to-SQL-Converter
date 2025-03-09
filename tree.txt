@@ -2,15 +2,33 @@
 ├── backend
 │   ├── app.py
 │   ├── Dockerfile
-│   ├── index.html
-│   └── requirements.txt
+│   ├── __pycache__
+│   │   ├── bokeh_charts.cpython-311.pyc
+│   │   ├── bokeh_charts_examples.cpython-311.pyc
+│   │   └── bokeh_chooser.cpython-311.pyc
+│   ├── requirements.txt
+│   ├── templates
+│   │   └── index.html
+│   └── visualization
+│       ├── generator.py
+│       ├── __init__.py
+│       ├── plots.py
+│       └── __pycache__
+│           ├── bokeh_charts.cpython-311.pyc
+│           ├── bokeh_chooser.cpython-311.pyc
+│           ├── generator.cpython-311.pyc
+│           ├── __init__.cpython-311.pyc
+│           └── plots.cpython-311.pyc
 ├── docker-compose.yml
-├── frontend
-│   └── templates
 ├── models
 │   └── deepseek-coder-6.7b-instruct.Q4_K_M.gguf
 ├── Pipfile
-├── populate_db.sh
+├── postgres
+│   ├── Dockerfile
+│   └── init_readonly.sql
+├── __pycache__
+│   └── tests.cpython-311.pyc
+├── tests.py
 └── tree.txt
 
-4 directories, 9 files
+8 directories, 23 files
