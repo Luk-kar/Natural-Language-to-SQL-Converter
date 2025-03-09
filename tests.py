@@ -3,7 +3,7 @@ from bokeh.models import Plot
 import pandas as pd
 import numpy as np
 
-from backend.bokeh_charts import (
+from backend.visualization.plots import (
     plot_bar,
     plot_heatmap,
     plot_treemap,
@@ -15,7 +15,7 @@ from backend.bokeh_charts import (
     plot_donut,
     plot_box,
 )
-from backend.bokeh_chooser import run_plot_function
+from backend.visualization.generator import run_plot_function
 
 VALID_CONFIGS = {
     "bar": {

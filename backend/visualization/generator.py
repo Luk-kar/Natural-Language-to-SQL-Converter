@@ -6,7 +6,7 @@ provided JSON/dict configuration.
 # Third-party
 import pandas as pd
 
-from backend.bokeh_charts import (
+from backend.visualization.plots import (
     plot_bar,
     plot_heatmap,
     plot_treemap,
