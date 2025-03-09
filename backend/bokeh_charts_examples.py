@@ -26,7 +26,7 @@ import colorcet as cc
 from numpy import linspace
 
 
-def bar_chart(
+def plot_bar(
     data: pd.DataFrame,
     category_column: str,
     value_column: str,
