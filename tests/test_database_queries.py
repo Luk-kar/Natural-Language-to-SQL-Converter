@@ -1,9 +1,12 @@
+# Python
 import unittest
 from unittest.mock import patch, MagicMock
+
+# Database
 from psycopg2 import ProgrammingError
 import psycopg2
 
-from backend.app import (
+from backend.database import (
     get_schema,
     execute_query,
     DB_CONFIG,

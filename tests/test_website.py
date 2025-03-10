@@ -1,6 +1,9 @@
+# Python
 import unittest
 from unittest.mock import patch
-from backend.app import app  # adjust module import if needed
+
+# Main Flask app
+from backend.app import app
 
 
 class TestIndexEndpoint(unittest.TestCase):
@@ -9,9 +12,9 @@ class TestIndexEndpoint(unittest.TestCase):
         self.app = app.test_client()
         self.app.testing = True
 
-    @patch("backend.app.execute_query")
-    @patch("backend.app.LLM")
-    @patch("backend.app.get_schema")
+    @patch("backend.routes.execute_query")
+    @patch("backend.llm_engine.LLM")
+    @patch("backend.routes.get_schema")
     def test_post_sql_generation(self, mock_get_schema, mock_llm, mock_execute_query):
         """
         Test a POST request for SQL generation:
@@ -54,8 +57,8 @@ class TestIndexEndpoint(unittest.TestCase):
         self.assertIn("<td>2</td>", html)
         self.assertIn("<td>Bob</td>", html)
 
-    @patch("backend.app.get_schema")
-    @patch("backend.app.LLM")
+    @patch("backend.routes.get_schema")
+    @patch("backend.llm_engine.LLM")
     def test_post_describe(self, mock_llm, mock_get_schema):
         """
         Test a POST request for describing the database schema.
@@ -77,7 +80,7 @@ class TestIndexEndpoint(unittest.TestCase):
         # Verify that the dummy description appears in the rendered output.
         self.assertIn("This table contains user records.", data)
 
-    @patch("backend.app.get_schema", side_effect=Exception("Test error"))
+    @patch("backend.routes.get_schema", side_effect=Exception("Test error"))
     def test_post_error_handling(self, mock_get_schema):
         """
         Test error handling.

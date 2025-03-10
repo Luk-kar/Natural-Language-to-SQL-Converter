@@ -8,6 +8,7 @@ import numpy as np
 # Bokeh
 from bokeh.models import Plot
 
+# Visualization
 from backend.visualization.plots import (
     plot_bar,
     plot_heatmap,

@@ -1,6 +1,8 @@
+# Python
 import unittest
 
-from backend.app import (
+# LLM
+from backend.llm_engine import (
     extract_sql,
 )
 

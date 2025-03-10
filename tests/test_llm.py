@@ -1,5 +1,8 @@
+# Python
 import unittest
-from backend.app import get_llm, generate_sql, generate_describe
+
+# LLM
+from backend.llm_engine import get_llm, generate_sql, generate_describe
 
 
 class TestGenerateSQLLive(unittest.TestCase):
