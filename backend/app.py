@@ -26,12 +26,25 @@ MAX_ROWS_DISPLAY = 100
 model_name = "deepseek-coder-6.7b-instruct.Q4_K_M"
 model_path = f"backend/models/{model_name}.gguf"
 
-# Initialize the model
-llm = Llama(
-    model_path=model_path,
-    n_ctx=4096,  # Context window size (adjust as needed)
-    n_threads=4,  # Number of CPU threads
-)
+
+llm = None
+
+
+def initialize_llm(model_path):
+    """Initialize and return the LLM model."""
+    return Llama(
+        model_path=model_path,
+        n_ctx=4096,  # Context window size (adjust as needed)
+        n_threads=4,  # Number of CPU threads
+    )
+
+
+def get_llm():
+    """Lazily initialize and return the LLM instance."""
+    global llm
+    if llm is None:
+        llm = initialize_llm(model_path)
+    return llm
 
 
 def get_schema():
@@ -65,8 +78,10 @@ def get_schema():
         for table_schema, table, column, dtype, comment in results:  # Fixed unpacking
             if table != current_table:
                 schema.append(f"\nTable {table_schema}.{table}:")
+                schema.append("|Column|Data Type|Comment|")
+                schema.append("|------|---------|-------|")
                 current_table = table
-            schema.append(f"- {column} ({dtype}) '{comment}'")
+            schema.append(f"|{column}|({dtype})|{comment}|")
 
         return "\n".join(schema)
 
@@ -128,7 +143,7 @@ def extract_sql(response_text: str) -> str:
 def generate_describe(schema: str, question: str) -> str:
     """Generate a description about the database structure using the LLM model"""
     if not schema:
-        schema_part = ""
+        raise ValueError("Database schema is empty.")
     else:
         schema_part = f"""Database schema:
     {schema}
@@ -157,7 +172,7 @@ def generate_describe(schema: str, question: str) -> str:
 
 
 def execute_query(sql: str):
-    """Execute SQL query on PostgreSQL"""
+    """Execute SELECT SQL query on PostgreSQL"""
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
@@ -168,10 +183,7 @@ def execute_query(sql: str):
             results = cur.fetchall()
             return {"columns": columns, "data": results}
         else:  # For non-SELECT queries
-            conn.commit()
-            return {
-                "message": f"Query executed successfully. Rows affected: {cur.rowcount}"
-            }
+            raise ValueError("Only SELECT queries are supported.")
 
     except Exception as e:
         return {"error": str(e)}
@@ -234,4 +246,6 @@ def get_last_sql():
 
 
 if __name__ == "__main__":
+
+    get_llm()  # Lazy initialization of the LLM instance
     app.run(host="0.0.0.0", port=5000)

@@ -1,7 +1,12 @@
+# Python
 import unittest
-from bokeh.models import Plot
+
+# Third-party
 import pandas as pd
 import numpy as np
+
+# Bokeh
+from bokeh.models import Plot
 
 from backend.visualization.plots import (
     plot_bar,

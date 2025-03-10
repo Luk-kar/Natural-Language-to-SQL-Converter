@@ -1,5 +1,5 @@
 -- Create a read-only user
-DO $ $ BEGIN IF NOT EXISTS (
+DO $$ BEGIN IF NOT EXISTS (
     SELECT
     FROM
         pg_catalog.pg_roles
@@ -9,7 +9,7 @@ DO $ $ BEGIN IF NOT EXISTS (
 
 END IF;
 
-END $ $;
+END $$;
 
 -- Grant SELECT privileges on all existing tables in 'business' database
 GRANT CONNECT ON DATABASE business TO readonly_user;
