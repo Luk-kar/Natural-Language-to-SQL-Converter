@@ -389,7 +389,7 @@ def plot_scatter(
     color_mapper = linear_cmap(field_name="y", palette=palette, low=min(y), high=max(y))
 
     # Create data source
-    source = ColumnDataSource(dict(x=x, y=y, markers=markers))
+    source = ColumnDataSource({"x": x, "y": y, "markers": markers})
 
     # Configure plot
     plot = Plot(
@@ -508,7 +508,7 @@ def plot_ridge(
 
     x_range = (x_min - padding, x_max + padding)
 
-    source = ColumnDataSource(data=dict(x=x_values))
+    source = ColumnDataSource(data={"x": x_values})
 
     # The categories are the DataFrame's column names (now displayed in the same order)
     categories = list(data.columns)
@@ -730,11 +730,11 @@ def plot_donut(
     # Calculate angles for the annular wedges
     angles = selected[value_column].map(lambda x: 2 * pi * (x / 100)).cumsum().tolist()
     source = ColumnDataSource(
-        dict(
-            start=[0] + angles[:-1],
-            end=angles,
-            colors=[colors[category] for category in categories],
-        )
+        {
+            "start": [0] + angles[:-1],
+            "end": angles,
+            "colors": [colors[category] for category in categories],
+        }
     )
 
     # Create plot with fixed ranges
