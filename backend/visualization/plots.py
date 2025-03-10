@@ -91,36 +91,36 @@ def plot_bar(
 
     # Generate a dynamic color palette based on the number of bars
     bright = tol["Sunset"]
-    n = len(x_values)
-    if n in bright:
-        colors = bright[n]
+    num_categories = len(x_values)
+    if num_categories in bright:
+        colors = bright[num_categories]
     else:
         # If the exact number is not available, use the largest available and repeat/cut as needed.
         max_colors = max(bright.keys())
         palette = bright[max_colors]
         # Repeat the palette if necessary, then cut to the desired length.
-        colors = (palette * ((n // len(palette)) + 1))[:n]
+        colors = (palette * ((num_categories // len(palette)) + 1))[:num_categories]
 
     # Create the figure
     x_range = (
         pd.Series(x_values).unique().tolist()
     )  # Convert to Series and get unique values
-    p = figure(
+    plot = figure(
         width=width,
         height=height,
         x_range=x_range,
         toolbar_location=None,
         title=title,  # Add title to the plot
     )
-    p.vbar(x=x_values, width=bar_width, bottom=0, top=top_values, color=colors)
+    plot.vbar(x=x_values, width=bar_width, bottom=0, top=top_values, color=colors)
 
     # Styling
-    p.xaxis.axis_label = category_column
-    p.yaxis.axis_label = value_column
-    p.xgrid.grid_line_color = None
-    p.ygrid.grid_line_color = "#dddddd"
+    plot.xaxis.axis_label = category_column
+    plot.yaxis.axis_label = value_column
+    plot.xgrid.grid_line_color = None
+    plot.ygrid.grid_line_color = "#dddddd"
 
-    return p
+    return plot
 
 
 def plot_heatmap(
@@ -165,7 +165,7 @@ def plot_heatmap(
         (f"{value_column}", f"@{value_column}%"),
     ]
 
-    p = figure(
+    plot = figure(
         title=title,
         x_range=x_range,
         y_range=y_range,
@@ -177,10 +177,10 @@ def plot_heatmap(
         tooltips=tooltips,
     )
 
-    p.grid.grid_line_color = p.axis.axis_line_color = None
-    p.axis.major_tick_line_color = None
-    p.axis.major_label_text_font_size = "7px"
-    p.xaxis.major_label_orientation = pi / 3
+    plot.grid.grid_line_color = plot.axis.axis_line_color = None
+    plot.axis.major_tick_line_color = None
+    plot.axis.major_label_text_font_size = "7px"
+    plot.xaxis.major_label_orientation = pi / 3
 
     mapper = linear_cmap(
         value_column,
@@ -189,7 +189,7 @@ def plot_heatmap(
         high=data[value_column].max(),
     )
 
-    r = p.rect(
+    heatmap_rectangles = plot.rect(
         x=x_column,
         y=y_column,
         width=1,
@@ -199,7 +199,7 @@ def plot_heatmap(
         line_color=None,
     )
 
-    color_bar = r.construct_color_bar(
+    color_bar = heatmap_rectangles.construct_color_bar(
         major_label_text_font_size="7px",
         ticker=BasicTicker(desired_num_ticks=len(colors)),
         formatter=PrintfTickFormatter(format="%d%%"),
@@ -207,9 +207,9 @@ def plot_heatmap(
         border_line_color=None,
         padding=5,
     )
-    p.add_layout(color_bar, "right")
+    plot.add_layout(color_bar, "right")
 
-    return p
+    return plot
 
 
 def plot_treemap(
@@ -237,47 +237,68 @@ def plot_treemap(
     if len(group_columns) < 2:
         raise ValueError("At least two group columns are required.")
 
-    grouped = data.groupby(group_columns)[value_column].sum().reset_index()
-    x, y, w, h = 0, 0, width, height
+    aggregated_data = data.groupby(group_columns)[value_column].sum().reset_index()
+    start_x, start_y = 0, 0
+    canvas_width, canvas_height = width, height
 
-    def treemap(
-        df: pd.DataFrame,
-        col: str,
-        x: float,
-        y: float,
-        dx: float,
-        dy: float,
-        N: int = 100,
+    def compute_treemap(
+        data_frame: pd.DataFrame,
+        value_column: str,
+        start_x: float,
+        start_y: float,
+        width: float,
+        height: float,
+        max_entries: int = 100,
     ) -> pd.DataFrame:
-        subset = df.nlargest(N, col)
-        sizes = normalize_sizes(subset[col], dx, dy)
-        rects = squarify(sizes, x, y, dx, dy)
+        """
+        Compute the treemap layout for a subset of data.
+        """
+        subset = data_frame.nlargest(max_entries, value_column)
+        sizes = normalize_sizes(subset[value_column], width, height)
+        rects = squarify(sizes, start_x, start_y, width, height)
         rects_df = pd.DataFrame(rects, index=subset.index)
+
         # Join the original subset to preserve additional columns like 'Region'
         return subset.join(rects_df)
 
     def recursive_treemap(
-        df: pd.DataFrame,
+        data_frame: pd.DataFrame,
         group_levels: List[str],
-        x: float,
-        y: float,
-        dx: float,
-        dy: float,
+        start_x: float,
+        start_y: float,
+        width: float,
+        height: float,
     ) -> pd.DataFrame:
+        """
+        Recursively compute a hierarchical treemap layout.
+        """
         if len(group_levels) == 1:  # Base case: last level (smallest categories)
-            return treemap(df, value_column, x, y, dx, dy, N=10)
+            return compute_treemap(
+                data_frame,
+                value_column,
+                start_x,
+                start_y,
+                width,
+                height,
+                max_entries=10,
+            )
 
         current_level = group_levels[0]
         next_level = group_levels[1:]
 
         # Get the top-level blocks
-        top_blocks = treemap(
-            df.groupby(current_level).sum().reset_index(), value_column, x, y, dx, dy
+        top_blocks = compute_treemap(
+            data_frame.groupby(current_level).sum().reset_index(),
+            value_column,
+            start_x,
+            start_y,
+            width,
+            height,
         )
 
         all_blocks = []
         for _, row in top_blocks.iterrows():
-            sub_df = df[df[current_level] == row[current_level]]
+            sub_df = data_frame[data_frame[current_level] == row[current_level]]
             sub_blocks = recursive_treemap(
                 sub_df, next_level, row.x, row.y, row.dx, row.dy
             )
@@ -285,39 +306,41 @@ def plot_treemap(
 
         return pd.concat(all_blocks)
 
-    blocks = recursive_treemap(grouped, group_columns, x, y, w, h)
+    treemap_blocks = recursive_treemap(
+        aggregated_data, group_columns, start_x, start_y, canvas_width, canvas_height
+    )
 
-    p = figure(
-        width=w,
-        height=h,
+    treemap_plot = figure(
+        width=canvas_width,
+        height=canvas_height,
         toolbar_location=None,
         title=title,
         x_axis_location=None,
         y_axis_location=None,
         tooltips=f"@{group_columns[-1]}",
     )
-    p.grid.grid_line_color = None
+    treemap_plot.grid.grid_line_color = None
 
     # Color based on top-level category
-    regions = data[group_columns[0]].unique()
-    p.block(
+    top_level_categories = data[group_columns[0]].unique()
+    treemap_plot.block(
         "x",
         "y",
         "dx",
         "dy",
-        source=blocks,
+        source=treemap_blocks,
         line_color="white",
         line_width=1,
-        fill_color=factor_cmap(group_columns[0], color_palette, regions),
+        fill_color=factor_cmap(group_columns[0], color_palette, top_level_categories),
     )
 
     # Add labels
-    blocks["ytop"] = blocks.y + blocks.dy
-    p.text(
+    treemap_blocks["ytop"] = treemap_blocks.y + treemap_blocks.dy
+    treemap_plot.text(
         x="x",
         y="ytop",
         text=group_columns[-1],
-        source=blocks,
+        source=treemap_blocks,
         text_font_size="6pt",
         text_color="white",
         x_offset=2,
@@ -325,7 +348,7 @@ def plot_treemap(
         text_baseline="top",
     )
 
-    return p
+    return treemap_plot
 
 
 def plot_scatter(
@@ -428,16 +451,16 @@ def plot_stacked_area(
             :num_stackers
         ]
 
-    p = figure(
+    plot = figure(
         x_range=(0, len(data) - 1),
         y_range=(0, data[stackers].sum(axis=1).max() * 1.1),
         width=width,
         height=height,
         title=title,
     )
-    p.grid.minor_grid_line_color = "#eeeeee"
+    plot.grid.minor_grid_line_color = "#eeeeee"
 
-    p.varea_stack(
+    plot.varea_stack(
         stackers=stackers,
         x="index",
         color=palette,
@@ -445,10 +468,10 @@ def plot_stacked_area(
         source=ColumnDataSource(data),
     )
 
-    p.legend.update(
+    plot.legend.update(
         orientation="horizontal", background_fill_color="#fafafa", location="top_center"
     )
-    return p
+    return plot
 
 
 def plot_ridge(
@@ -489,7 +512,7 @@ def plot_ridge(
 
     # The categories are the DataFrame's column names (now displayed in the same order)
     categories = list(data.columns)
-    p = figure(
+    plot = figure(
         y_range=categories[::-1],
         width=width,
         x_range=x_range,
@@ -509,19 +532,19 @@ def plot_ridge(
         pdf = gaussian_kde(values)
         y = ridge(cat, pdf(x), scale)
         source.add(y, cat)
-        p.patch(
+        plot.patch(
             "x", cat, color=palette[i], alpha=0.6, line_color="black", source=source
         )
 
-    p.background_fill_color = "#efefef"
-    p.xaxis.ticker = BasicTicker()
-    p.xaxis.formatter = BasicTickFormatter()
-    p.ygrid.grid_line_color = None
-    p.xgrid.grid_line_color = "#dddddd"
-    p.xgrid.ticker = p.xaxis.ticker
-    p.y_range.range_padding = 0.12
+    plot.background_fill_color = "#efefef"
+    plot.xaxis.ticker = BasicTicker()
+    plot.xaxis.formatter = BasicTickFormatter()
+    plot.ygrid.grid_line_color = None
+    plot.xgrid.grid_line_color = "#dddddd"
+    plot.xgrid.ticker = plot.xaxis.ticker
+    plot.y_range.range_padding = 0.12
 
-    return p
+    return plot
 
 
 def plot_histogram(data: pd.DataFrame, title="Histogram Chart", width=670, height=400):
@@ -572,11 +595,11 @@ def plot_histogram(data: pd.DataFrame, title="Histogram Chart", width=670, heigh
     bins = np.linspace(data_min, data_max, bins_count)
 
     # Create plot
-    p = figure(width=width, height=height, toolbar_location=None, title=title)
+    plot = figure(width=width, height=height, toolbar_location=None, title=title)
 
     # Histogram
     hist, edges = np.histogram(data_values, density=True, bins=bins)
-    p.quad(
+    plot.quad(
         top=hist,
         bottom=0,
         left=edges[:-1],
@@ -590,15 +613,15 @@ def plot_histogram(data: pd.DataFrame, title="Histogram Chart", width=670, heigh
     x = np.linspace(data_min, data_max, 100)
     mean, std = np.mean(data_values), np.std(data_values)
     pdf = np.exp(-0.5 * ((x - mean) / std) ** 2) / (std * np.sqrt(2 * np.pi))
-    p.line(x, pdf, line_width=2, line_color="navy", legend_label="Distribution Line")
+    plot.line(x, pdf, line_width=2, line_color="navy", legend_label="Distribution Line")
 
     # Styling
-    p.y_range.start = 0
-    p.xaxis.axis_label = numeric_column  # Use column name as x-axis label
-    p.yaxis.axis_label = "Density"  # Default y-axis label
-    p.legend.location = "top_right"
+    plot.y_range.start = 0
+    plot.xaxis.axis_label = numeric_column  # Use column name as x-axis label
+    plot.yaxis.axis_label = "Density"  # Default y-axis label
+    plot.legend.location = "top_right"
 
-    return p
+    return plot
 
 
 def plot_pie(
@@ -632,7 +655,7 @@ def plot_pie(
     df["color"] = Category20c[len(df)]
 
     # Create the pie chart
-    p = figure(
+    plot = figure(
         height=height,
         title=title,
         toolbar_location=None,
@@ -640,7 +663,7 @@ def plot_pie(
         tooltips="@category: @value",
         x_range=(-0.5, 1.0),
     )
-    p.wedge(
+    plot.wedge(
         x=0,
         y=1,
         radius=0.4,
@@ -651,10 +674,10 @@ def plot_pie(
         legend_field="category",
         source=df,
     )
-    p.axis.axis_label = None
-    p.axis.visible = False
-    p.grid.grid_line_color = None
-    return p
+    plot.axis.axis_label = None
+    plot.axis.visible = False
+    plot.grid.grid_line_color = None
+    return plot
 
 
 def plot_donut(
@@ -713,7 +736,7 @@ def plot_donut(
 
     plot_size = height
 
-    p = figure(
+    plot = figure(
         x_range=xdr,
         y_range=ydr,
         title=title,
@@ -734,15 +757,15 @@ def plot_donut(
         line_width=3,
         fill_color="colors",
     )
-    renderer = p.add_glyph(source, glyph)
+    renderer = plot.add_glyph(source, glyph)
 
     # Create a legend
     legend = Legend(location="center")
     for i, category in enumerate(categories):
         legend.items.append(LegendItem(label=category, renderers=[renderer], index=i))
-    p.add_layout(legend, "center")
+    plot.add_layout(legend, "center")
 
-    return p
+    return plot
 
 
 def plot_box(
@@ -790,7 +813,7 @@ def plot_box(
     categories = df[x_column].unique()
 
     # Create figure with configurable size
-    p = figure(
+    plot = figure(
         x_range=categories,
         toolbar_location=None,
         title=title,
@@ -803,19 +826,19 @@ def plot_box(
     # Add whiskers for outlier bounds
     whisker = Whisker(base=x_column, upper="upper", lower="lower", source=source)
     whisker.upper_head.size = whisker.lower_head.size = 20
-    p.add_layout(whisker)
+    plot.add_layout(whisker)
 
     # Configure color mapping
     palette = Category10[len(categories)] if len(categories) <= 10 else Category10[10]
     cmap = factor_cmap(x_column, palette=palette, factors=categories)
 
     # Draw box elements
-    p.vbar(x_column, 0.7, "q2", "q3", source=source, color=cmap, line_color="black")
-    p.vbar(x_column, 0.7, "q1", "q2", source=source, color=cmap, line_color="black")
+    plot.vbar(x_column, 0.7, "q2", "q3", source=source, color=cmap, line_color="black")
+    plot.vbar(x_column, 0.7, "q1", "q2", source=source, color=cmap, line_color="black")
 
     # Plot outliers
     outliers = df[~df[y_column].between(df.lower, df.upper)]
-    p.scatter(
+    plot.scatter(
         x_column,
         y_column,
         source=ColumnDataSource(outliers),
@@ -825,8 +848,8 @@ def plot_box(
     )
 
     # Final styling
-    p.xgrid.grid_line_color = None
-    p.axis.major_label_text_font_size = "14px"
-    p.axis.axis_label_text_font_size = "12px"
+    plot.xgrid.grid_line_color = None
+    plot.axis.major_label_text_font_size = "14px"
+    plot.axis.axis_label_text_font_size = "12px"
 
-    return p
+    return plot
