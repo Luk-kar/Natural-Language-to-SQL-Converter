@@ -1,6 +1,14 @@
+"""
+This script defines a Flask web application that generates:
+- SQL queries based on user input questions in natural language.
+- Executes the generated SQL queries on a PostgreSQL database.
+- Descriptions of the database schema in plain language.
+- Generates plots based on the executed SQL queries.
+- Generate tooltips for the SQL queries.
+"""
+
 # Python
 import os
-import random
 import re
 import logging
 
@@ -23,11 +31,11 @@ DB_CONFIG = {
 MAX_ROWS_DISPLAY = 100
 
 # Initialize model and tokenizer
-model_name = "deepseek-coder-6.7b-instruct.Q4_K_M"
-model_path = f"backend/models/{model_name}.gguf"
+MODEL_NAME = "deepseek-coder-6.7b-instruct.Q4_K_M"
+MODEL_PATH = f"backend/models/{MODEL_NAME}.gguf"
 
 
-llm = None
+LLM = None
 
 
 def initialize_llm(model_path):
@@ -41,10 +49,10 @@ def initialize_llm(model_path):
 
 def get_llm():
     """Lazily initialize and return the LLM instance."""
-    global llm
-    if llm is None:
-        llm = initialize_llm(model_path)
-    return llm
+    global LLM
+    if LLM is None:
+        LLM = initialize_llm(MODEL_PATH)
+    return LLM
 
 
 def get_schema():
@@ -86,7 +94,7 @@ def get_schema():
         return "\n".join(schema)
 
     except Exception as e:
-        logging.error(f"Schema retrieval error: {str(e)}")
+        logging.error("Schema retrieval error:\n%s", str(e))
         raise  # Re-raise the exception for better error handling
     finally:
         if "conn" in locals():
@@ -118,7 +126,7 @@ def generate_sql(schema: str, question: str) -> str:
             """
     )
 
-    response = llm.create_completion(
+    response = LLM.create_completion(
         prompt=prompt,
         max_tokens=256,
         temperature=0.7,
@@ -132,6 +140,8 @@ def generate_sql(schema: str, question: str) -> str:
 
 
 def extract_sql(response_text: str) -> str:
+    """Extract SQL query from the generated text"""
+
     match = re.search(r"(SELECT).+?;", response_text, re.IGNORECASE | re.DOTALL)
 
     if match:
@@ -162,7 +172,7 @@ def generate_describe(schema: str, question: str) -> str:
     DO NOT START WITH: 'Answer:', 'Solution', '.etc'
     """
         )
-    response = llm.create_completion(
+    response = LLM.create_completion(
         prompt=prompt,
         max_tokens=256,
         temperature=0.7,
@@ -227,7 +237,7 @@ def index():
     return render_template(
         "index.html",
         result=result,
-        model_name=model_name,
+        model_name=MODEL_NAME,
         db_name=DB_CONFIG["database"],
     )
 
