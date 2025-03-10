@@ -2,7 +2,7 @@
 import unittest
 
 # LLM
-from backend.llm_engine import get_llm, generate_sql, generate_describe
+from app.backend.llm_engine import get_llm, generate_sql, generate_describe
 
 
 class TestGenerateSQLLive(unittest.TestCase):

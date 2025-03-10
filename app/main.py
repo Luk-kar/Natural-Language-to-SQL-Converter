@@ -8,18 +8,18 @@ This script defines a Flask web application that generates:
 """
 
 # LLM
-from backend.llm_engine import get_llm
+from app.backend.llm_engine import get_llm
 
 # Routes
-from backend.flask_configuration import app
+from app.backend.flask_configuration import flask_app
 
 # Flask configuration
-from backend.flask_configuration import FLASK_DEBUG, FLASK_RUN_HOST, FLASK_RUN_PORT
+from app.backend.flask_configuration import FLASK_DEBUG, FLASK_RUN_HOST, FLASK_RUN_PORT
 
 # Import routes to register endpoints
-import backend.routes
+import app.backend.routes
 
 if __name__ == "__main__":
 
     get_llm()  # Initialize LLM
-    app.run(host=FLASK_RUN_HOST, port=FLASK_RUN_PORT, debug=FLASK_DEBUG)
+    flask_app.run(host=FLASK_RUN_HOST, port=FLASK_RUN_PORT, debug=FLASK_DEBUG)

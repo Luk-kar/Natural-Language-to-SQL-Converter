@@ -2,7 +2,7 @@
 import unittest
 
 # LLM
-from backend.llm_engine import (
+from app.backend.llm_engine import (
     extract_sql,
 )
 

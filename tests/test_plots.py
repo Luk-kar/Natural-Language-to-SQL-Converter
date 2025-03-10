@@ -9,7 +9,7 @@ import numpy as np
 from bokeh.models import Plot
 
 # Visualization
-from backend.visualization.plots import (
+from app.backend.visualization.plots import (
     plot_bar,
     plot_heatmap,
     plot_treemap,
@@ -21,7 +21,7 @@ from backend.visualization.plots import (
     plot_donut,
     plot_box,
 )
-from backend.visualization.generator import run_plot_function
+from app.backend.visualization.generator import run_plot_function
 
 VALID_CONFIGS = {
     "bar": {

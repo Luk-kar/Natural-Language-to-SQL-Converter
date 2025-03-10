@@ -6,16 +6,16 @@ Contains the routes for the Flask application.
 from flask import render_template, request, jsonify, session
 
 # Database
-from backend.database import get_schema, execute_query, DB_CONFIG
+from app.backend.database import get_schema, execute_query, DB_CONFIG
 
 # LLM
-from backend.llm_engine import generate_sql, generate_describe, MODEL_NAME
+from app.backend.llm_engine import generate_sql, generate_describe, MODEL_NAME
 
 # Flask configuration
-from backend.flask_configuration import MAX_ROWS_DISPLAY, app
+from app.backend.flask_configuration import MAX_ROWS_DISPLAY, flask_app
 
 
-@app.route("/", methods=["GET", "POST"])
+@flask_app.route("/", methods=["GET", "POST"])
 def index():
     """
     Starting point for the web application.
@@ -60,7 +60,7 @@ def index():
     )
 
 
-@app.route("/get_last_sql")
+@flask_app.route("/get_last_sql")
 def get_last_sql():
     """Return the last generated SQL from session"""
     result = session.get("result")
@@ -73,14 +73,14 @@ def get_last_sql():
     return jsonify({"sql": sql})
 
 
-@app.route("/generate_plots")
+@flask_app.route("/generate_plots")
 def generate_plots():
     # TODO
 
     return {}
 
 
-@app.route("/generate_tooltip")
+@flask_app.route("/generate_tooltip")
 def generate_tooltip():
     result = session.get("result")
     sql = result.get("sql", "") if result else ""

@@ -11,7 +11,7 @@ from llama_cpp import Llama
 
 # Model Configuration
 MODEL_NAME = "deepseek-coder-6.7b-instruct.Q4_K_M"
-MODEL_PATH = os.path.join("backend", "models", f"{MODEL_NAME}.gguf")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", f"{MODEL_NAME}.gguf")
 LLM = None
 
 

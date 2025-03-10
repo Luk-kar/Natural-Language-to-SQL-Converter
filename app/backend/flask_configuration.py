@@ -9,8 +9,9 @@ import os
 from flask import Flask
 
 # Configuration - Flask
-app = Flask(__name__, template_folder="../frontend/templates")
-app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24))  # Secret key
+template_folder = os.path.join(os.path.dirname(__file__), "..", "frontend", "templates")
+flask_app = Flask(__name__, template_folder=template_folder)
+flask_app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24))  # Secret key
 
 MAX_ROWS_DISPLAY = 100
 

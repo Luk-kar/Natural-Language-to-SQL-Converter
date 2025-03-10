@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 from psycopg2 import ProgrammingError
 import psycopg2
 
-from backend.database import (
+from app.backend.database import (
     get_schema,
     execute_query,
     DB_CONFIG,
