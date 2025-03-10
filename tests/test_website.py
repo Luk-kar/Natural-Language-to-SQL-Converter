@@ -10,7 +10,7 @@ class TestIndexEndpoint(unittest.TestCase):
         self.app.testing = True
 
     @patch("backend.app.execute_query")
-    @patch("backend.app.llm")
+    @patch("backend.app.LLM")
     @patch("backend.app.get_schema")
     def test_post_sql_generation(self, mock_get_schema, mock_llm, mock_execute_query):
         """
@@ -55,7 +55,7 @@ class TestIndexEndpoint(unittest.TestCase):
         self.assertIn("<td>Bob</td>", html)
 
     @patch("backend.app.get_schema")
-    @patch("backend.app.llm")
+    @patch("backend.app.LLM")
     def test_post_describe(self, mock_llm, mock_get_schema):
         """
         Test a POST request for describing the database schema.

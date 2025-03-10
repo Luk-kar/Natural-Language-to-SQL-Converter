@@ -17,12 +17,14 @@ from flask import Flask, render_template, request, jsonify, session
 import psycopg2
 from llama_cpp import Llama
 
+# Flask Configuration
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24))  # <-- Add secret key
 
-# Configure database connection
+# Database Configuration
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
+    "port": os.getenv("DB_PORT"),
     "database": os.getenv("DB_NAME"),
     "user": os.getenv("DB_USER_READONLY"),
     "password": os.getenv("DB_PASSWORD_READONLY"),
@@ -30,12 +32,16 @@ DB_CONFIG = {
 
 MAX_ROWS_DISPLAY = 100
 
-# Initialize model and tokenizer
+# Model Configuration
 MODEL_NAME = "deepseek-coder-6.7b-instruct.Q4_K_M"
 MODEL_PATH = f"backend/models/{MODEL_NAME}.gguf"
-
-
 LLM = None
+
+# Flask Run Config
+FLASK_ENV = os.getenv("FLASK_ENV", "production")
+FLASK_DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
+FLASK_RUN_HOST = os.getenv("FLASK_RUN_HOST", "0.0.0.0")
+FLASK_RUN_PORT = int(os.getenv("FLASK_RUN_PORT", 5000))
 
 
 def initialize_llm(model_path):
@@ -257,5 +263,5 @@ def get_last_sql():
 
 if __name__ == "__main__":
 
-    get_llm()  # Lazy initialization of the LLM instance
-    app.run(host="0.0.0.0", port=5000)
+    get_llm()  # Initialize LLM
+    app.run(host=FLASK_RUN_HOST, port=FLASK_RUN_PORT, debug=FLASK_DEBUG)
