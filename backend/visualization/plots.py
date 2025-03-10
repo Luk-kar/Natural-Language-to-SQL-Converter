@@ -504,11 +504,11 @@ def plot_ridge(
     x_min = all_values.min() if len(all_values) > 0 else 0
     x_max = all_values.max() if len(all_values) > 0 else 1
     padding = 0.1 * (x_max - x_min) if x_max != x_min else 1
-    x = linspace(x_min - padding, x_max + padding, 500)
+    x_values = linspace(x_min - padding, x_max + padding, 500)
 
     x_range = (x_min - padding, x_max + padding)
 
-    source = ColumnDataSource(data=dict(x=x))
+    source = ColumnDataSource(data=dict(x=x_values))
 
     # The categories are the DataFrame's column names (now displayed in the same order)
     categories = list(data.columns)
@@ -525,15 +525,22 @@ def plot_ridge(
     )  # Scale factor for the ridge heights
 
     # Loop over categories in original order (no reversal)
-    for i, cat in enumerate(categories):
+    for current_category, data_category in enumerate(categories):
         values = (
-            data[cat].dropna().values
+            data[data_category].dropna().values
         )  # Ensure no NaN values are passed to gaussian_kde
-        pdf = gaussian_kde(values)
-        y = ridge(cat, pdf(x), scale)
-        source.add(y, cat)
+        probability_density_function = gaussian_kde(values)
+        probability_y_values = ridge(
+            data_category, probability_density_function(x_values), scale
+        )
+        source.add(probability_y_values, data_category)
         plot.patch(
-            "x", cat, color=palette[i], alpha=0.6, line_color="black", source=source
+            "x",
+            data_category,
+            color=palette[current_category],
+            alpha=0.6,
+            line_color="black",
+            source=source,
         )
 
     plot.background_fill_color = "#efefef"
@@ -731,14 +738,14 @@ def plot_donut(
     )
 
     # Create plot with fixed ranges
-    xdr = Range1d(start=-2, end=2)
-    ydr = Range1d(start=-2, end=2)
+    x_range_data = Range1d(start=-2, end=2)
+    y_range_data = Range1d(start=-2, end=2)
 
     plot_size = height
 
     plot = figure(
-        x_range=xdr,
-        y_range=ydr,
+        x_range=x_range_data,
+        y_range=y_range_data,
         title=title,
         toolbar_location=None,
         width=plot_size,
@@ -746,7 +753,7 @@ def plot_donut(
     )
 
     # Add annular wedges to the plot
-    glyph = AnnularWedge(
+    donut_slice = AnnularWedge(
         x=0,
         y=0,
         inner_radius=0.9,
@@ -757,7 +764,7 @@ def plot_donut(
         line_width=3,
         fill_color="colors",
     )
-    renderer = plot.add_glyph(source, glyph)
+    renderer = plot.add_glyph(source, donut_slice)
 
     # Create a legend
     legend = Legend(location="center")
@@ -792,24 +799,24 @@ def plot_box(
     df = data.copy()
 
     # Calculate quantiles for each category
-    qs = (
+    quantile_summary = (
         df.groupby(x_column)[y_column]
         .quantile([0.25, 0.5, 0.75])
         .unstack()
         .reset_index()
     )
-    qs.columns = [x_column, "q1", "q2", "q3"]
+    quantile_summary.columns = [x_column, "q1", "q2", "q3"]
 
     # Compute IQR and outlier bounds
-    qs["iqr"] = qs.q3 - qs.q1
-    qs["upper"] = qs.q3 + 1.5 * qs.iqr
-    qs["lower"] = qs.q1 - 1.5 * qs.iqr
+    quantile_summary["iqr"] = quantile_summary.q3 - quantile_summary.q1
+    quantile_summary["upper"] = quantile_summary.q3 + 1.5 * quantile_summary.iqr
+    quantile_summary["lower"] = quantile_summary.q1 - 1.5 * quantile_summary.iqr
 
     # Merge bounds with original data
-    df = pd.merge(df, qs[[x_column, "upper", "lower"]], on=x_column)
+    df = pd.merge(df, quantile_summary[[x_column, "upper", "lower"]], on=x_column)
 
     # Prepare data sources
-    source = ColumnDataSource(qs)
+    source = ColumnDataSource(quantile_summary)
     categories = df[x_column].unique()
 
     # Create figure with configurable size
@@ -830,11 +837,15 @@ def plot_box(
 
     # Configure color mapping
     palette = Category10[len(categories)] if len(categories) <= 10 else Category10[10]
-    cmap = factor_cmap(x_column, palette=palette, factors=categories)
+    color_map = factor_cmap(x_column, palette=palette, factors=categories)
 
     # Draw box elements
-    plot.vbar(x_column, 0.7, "q2", "q3", source=source, color=cmap, line_color="black")
-    plot.vbar(x_column, 0.7, "q1", "q2", source=source, color=cmap, line_color="black")
+    plot.vbar(
+        x_column, 0.7, "q2", "q3", source=source, color=color_map, line_color="black"
+    )
+    plot.vbar(
+        x_column, 0.7, "q1", "q2", source=source, color=color_map, line_color="black"
+    )
 
     # Plot outliers
     outliers = df[~df[y_column].between(df.lower, df.upper)]
