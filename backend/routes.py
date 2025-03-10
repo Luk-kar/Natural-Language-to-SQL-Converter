@@ -1,3 +1,7 @@
+"""
+Contains the routes for the Flask application.
+"""
+
 # Flask
 from flask import render_template, request, jsonify, session
 
@@ -13,6 +17,11 @@ from backend.flask_configuration import MAX_ROWS_DISPLAY, app
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    """
+    Starting point for the web application.
+    Handles the form submission and generates SQL queries.
+    """
+
     result = None
 
     if request.method == "POST":
@@ -66,7 +75,7 @@ def get_last_sql():
 
 @app.route("/generate_plots")
 def generate_plots():
-    from backend.visualization.plots import create_plots
+    # TODO
 
     return {}
 

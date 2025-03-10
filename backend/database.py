@@ -1,3 +1,7 @@
+"""
+Contains functions to interact with a PostgreSQL database.
+"""
+
 # Python
 import os
 import logging

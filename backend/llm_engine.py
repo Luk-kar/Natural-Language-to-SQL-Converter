@@ -1,3 +1,7 @@
+"""
+Contains the functions to generate SQL queries and database descriptions using the LLM model.
+"""
+
 # Python
 import os
 import re

@@ -1,3 +1,7 @@
+"""
+Flask backend configuration file
+"""
+
 # Python
 import os
 
@@ -13,4 +17,4 @@ MAX_ROWS_DISPLAY = 100
 FLASK_ENV = os.getenv("FLASK_ENV", "production")
 FLASK_DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
 FLASK_RUN_HOST = os.getenv("FLASK_RUN_HOST", "0.0.0.0")
-FLASK_RUN_PORT = int(os.getenv("FLASK_RUN_PORT", 5000))
+FLASK_RUN_PORT = os.getenv("FLASK_RUN_PORT", "5000")
