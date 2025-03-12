@@ -17,6 +17,11 @@ services:
     build:
       context: .
       dockerfile: ./app/backend/Dockerfile
+      args:
+        GUNICORN_FLASK: ${GUNICORN_FLASK}
+        GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT}
+        FLASK_RUN_PORT: ${FLASK_RUN_PORT}
+        FLASK_RUN_HOST: ${FLASK_RUN_HOST}
     ports:
       - "${FLASK_RUN_PORT}:${FLASK_RUN_PORT}"
     environment:
