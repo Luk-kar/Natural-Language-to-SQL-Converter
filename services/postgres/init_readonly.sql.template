@@ -5,19 +5,19 @@ DO $$ BEGIN
         FROM
             pg_catalog.pg_roles
         WHERE
-            rolname = 'readonly_user'
+            rolname = '${DB_USER_READONLY}'
     ) THEN
-        CREATE ROLE readonly_user WITH LOGIN PASSWORD 'readonly_password';
+        CREATE ROLE ${DB_USER_READONLY} WITH LOGIN PASSWORD '${DB_PASSWORD_READONLY}';
     END IF;
 END $$;
 
--- Grant SELECT privileges on all existing tables in 'business' database
-GRANT CONNECT ON DATABASE business TO readonly_user;
-GRANT USAGE ON SCHEMA public TO readonly_user;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly_user;
+-- Grant SELECT privileges on all existing tables in '${POSTGRES_DB}' database
+GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${DB_USER_READONLY};
+GRANT USAGE ON SCHEMA public TO ${DB_USER_READONLY};
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${DB_USER_READONLY};
 
 -- Ensure future tables are also accessible
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO readonly_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO ${DB_USER_READONLY};
 
 -- Init sample db
 CREATE TABLE customers (
