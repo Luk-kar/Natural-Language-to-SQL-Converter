@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 
 # Main Flask app
-from app.main import flask_app
+from app.app import flask_app
 
 
 class TestIndexEndpoint(unittest.TestCase):

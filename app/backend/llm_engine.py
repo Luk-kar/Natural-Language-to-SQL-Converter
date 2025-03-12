@@ -12,24 +12,25 @@ from llama_cpp import Llama
 # Model Configuration
 MODEL_NAME = "deepseek-coder-6.7b-instruct.Q4_K_M"
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", f"{MODEL_NAME}.gguf")
+
 LLM = None
 
 
-def initialize_llm(model_path):
+def get_llm():
+    """Lazily initialize and return the LLM instance"""
+    global LLM
+    if LLM is None:
+        LLM = initialize_llm()
+    return LLM
+
+
+def initialize_llm():
     """Initialize and return the LLM model."""
     return Llama(
-        model_path=model_path,
+        model_path=MODEL_PATH,
         n_ctx=4096,  # Context window size (adjust as needed)
         n_threads=4,  # Number of CPU threads
     )
-
-
-def get_llm():
-    """Lazily initialize and return the LLM instance."""
-    global LLM
-    if LLM is None:
-        LLM = initialize_llm(MODEL_PATH)
-    return LLM
 
 
 def generate_sql(schema: str, question: str) -> str:

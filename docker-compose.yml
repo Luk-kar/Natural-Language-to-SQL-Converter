@@ -3,18 +3,22 @@ version: "3.8"
 services:
   postgres_local:
     image: postgres:15
-    build: ./postgres
+    build:
+      context: ./services/postgres
+      dockerfile: Dockerfile
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: secret
-      POSTGRES_DB: business
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:${DB_PORT}"
 
   backend_local:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: ./app/backend/Dockerfile
     ports:
-      - "5000:5000"
+      - "${FLASK_RUN_PORT}:${FLASK_RUN_PORT}"
     environment:
       DB_HOST: ollama-postgres_local-1
       DB_NAME: business
@@ -24,7 +28,7 @@ services:
       - postgres_local
     volumes:
       # Mount the model file from the host into the container
-      - ./models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf:/app/backend/models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf:ro
+      - ./app/backend/models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf:/app/backend/models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf:ro
 
 volumes:
   pgdata:

@@ -19,7 +19,8 @@ from app.backend.flask_configuration import FLASK_DEBUG, FLASK_RUN_HOST, FLASK_R
 # Import routes to register endpoints
 import app.backend.routes
 
+LLM = get_llm()
+
 if __name__ == "__main__":
 
-    get_llm()  # Initialize LLM
     flask_app.run(host=FLASK_RUN_HOST, port=FLASK_RUN_PORT, debug=FLASK_DEBUG)

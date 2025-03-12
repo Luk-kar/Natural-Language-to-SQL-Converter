@@ -9,9 +9,12 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY ./app ./app
+RUN pip install --no-cache-dir -r ./app/backend/requirements.txt
 
-COPY . .
+# Set the PYTHONPATH to include the /app directory
+ENV PYTHONPATH=/app
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "600", "app:app"]
+# Use a Gunicorn command that imports the correct app module
+# the llm processes cam take a long time to start up, so we set a timeout of 600 seconds
+CMD ["gunicorn", "app.app:flask_app", "--bind", "0.0.0.0:5000", "--timeout", "600"]
