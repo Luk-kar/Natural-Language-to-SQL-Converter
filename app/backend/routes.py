@@ -75,9 +75,35 @@ def get_last_sql():
 
 @flask_app.route("/generate_plots")
 def generate_plots():
-    # TODO
+    """
+    Generate a plot based on the previously executed SQL query result.
+    """
+    result = session.get("result")
+    if not result or "execution" not in result or "data" not in result["execution"]:
+        return jsonify({"error": "No data available for plotting"})
 
-    return {}
+    data = result["execution"]["data"]
+    df = pd.DataFrame(data)
+
+    # Extract context from plots.py (e.g., "Best for..." descriptions)
+    plot_context = {
+        "plot_bar": "Best for comparing values across categories",
+        "plot_heatmap": "Best for matrix-like data with two dimensions",
+        "plot_treemap": "Best for hierarchical part-to-whole relationships",
+        # Add other plot types and their descriptions
+    }
+
+    # # Use LLM to determine the best plot type based on data and context
+    # plot_type = determine_best_plot_type(df, plot_context)
+
+    # # Generate plot configuration
+    # plot_config = generate_plot_config(plot_type, df)
+
+    # # Run the plot function
+    # plot = run_plot_function(plot_config)
+
+    # # Return the plot (e.g., as HTML or JSON)
+    # return jsonify({"plot": plot.to_json()})
 
 
 @flask_app.route("/generate_tooltip")

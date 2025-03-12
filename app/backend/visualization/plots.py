@@ -8,6 +8,7 @@ from typing import List
 
 # Third-party
 import numpy as np
+from numpy import linspace
 import pandas as pd
 from scipy.stats import gaussian_kde
 from squarify import normalize_sizes, squarify
@@ -34,9 +35,6 @@ from bokeh.models import (
 from bokeh.palettes import tol, Category10, Category20, Category20c
 from bokeh.plotting import figure
 from bokeh.transform import linear_cmap, factor_cmap, cumsum
-
-# Numpy Specific
-from numpy import linspace
 
 
 def plot_bar(
