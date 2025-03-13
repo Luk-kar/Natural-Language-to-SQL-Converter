@@ -17,7 +17,9 @@ def parse_args_from_docstring(docstring: str) -> dict:
             in_args = True
             continue
         if in_args:
-            if not line or line.startswith(("returns:", "raises:", "example:")):
+            if not line or line.lower().startswith(
+                ("return:", "returns:", "raises:", "example:")
+            ):
                 break  # End of Args section
             if ":" in line:
                 param, desc = line.split(":", 1)
@@ -26,7 +28,6 @@ def parse_args_from_docstring(docstring: str) -> dict:
 
 
 def extract_plot_functions():
-
     with open(PLOTS_PATH, "r", encoding="utf-8") as f:
         code = f.read()
 
@@ -65,7 +66,7 @@ def extract_plot_functions():
             def_line = f"def {node.name}({', '.join(param_strings)}):"
             func_info["interface"] = def_line
 
-            # Process docstring to remove default parameters from Args
+            # Process docstring to remove default parameters from Args and exclude Returns
             docstring = ""
             if node.body and isinstance(node.body[0], ast.Expr):
                 docstring_node = node.body[0]
@@ -74,22 +75,38 @@ def extract_plot_functions():
 
             cleaned_doc_lines = []
             in_args_section = False
+            skip_remaining = False  # Flag to skip lines after Returns
             for line in docstring.split("\n"):
                 stripped_line = line.strip()
+                if skip_remaining:
+                    continue  # Skip remaining lines if flagged
+
+                # Check for the start of the Args section
                 if stripped_line.lower().startswith("args:"):
                     in_args_section = True
                     cleaned_doc_lines.append(line)
                     continue
+
                 if in_args_section:
-                    if not stripped_line or stripped_line.startswith(
-                        ("returns:", "raises:", "example:")
+                    # Check for end of Args section (empty line or other sections)
+                    if not stripped_line or stripped_line.lower().startswith(
+                        ("returns:", "return:", "raises:", "example:")
                     ):
                         in_args_section = False
-                    elif ":" in stripped_line:
-                        param_part = stripped_line.split(":", 1)[0].strip()
-                        if param_part in default_params:
-                            continue  # Skip lines for default parameters
-                cleaned_doc_lines.append(line)
+                        # If the line is Returns/Return, skip the rest of the lines
+                        if stripped_line.lower().startswith(("returns:", "return:")):
+                            skip_remaining = True
+                            continue
+                    else:
+                        # Check if this line is a default parameter and skip
+                        if ":" in stripped_line:
+                            param_part = stripped_line.split(":", 1)[0].strip()
+                            if param_part in default_params:
+                                continue
+
+                # Append the line if not skipping
+                if not skip_remaining:
+                    cleaned_doc_lines.append(line)
 
             func_info["description"] = "\n".join(cleaned_doc_lines).strip()
 

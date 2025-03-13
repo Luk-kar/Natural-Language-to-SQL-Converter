@@ -433,7 +433,11 @@ def plot_stacked_area(
         height: Plot height in pixels. Defaults to 400.
     """
     # Calculate stackers automatically if not provided
-    stackers = [col for col in data.columns if col != "index"]
+    stackers = [
+        col
+        for col in data.columns
+        if col != "index" and pd.api.types.is_numeric_dtype(data[col])
+    ]
 
     # Calculate the palette automatically if not provided.
     # Use the 'Sunset' palette from tol with a number of colors equal to the number of stackers.
@@ -532,7 +536,7 @@ def plot_ridge(
             data_category, probability_density_function(x_values), scale
         )
         source.add(probability_y_values, data_category)
-        plot.patch(
+        renderers = plot.patch(
             "x",
             data_category,
             color=palette[current_category],
@@ -540,6 +544,7 @@ def plot_ridge(
             line_color="black",
             source=source,
         )
+        renderers.name = "patches"  # Assign a name for testing
 
     plot.background_fill_color = "#efefef"
     plot.xaxis.ticker = BasicTicker()
@@ -834,7 +839,9 @@ def plot_box(
     plot.add_layout(whisker)
 
     # Configure color mapping
-    palette = Category10[len(categories)] if len(categories) <= 10 else Category10[10]
+    palette = (
+        Category10[max(3, len(categories))] if len(categories) <= 10 else Category10[10]
+    )
     color_map = factor_cmap(x_column, palette=palette, factors=categories)
 
     # Draw box elements
