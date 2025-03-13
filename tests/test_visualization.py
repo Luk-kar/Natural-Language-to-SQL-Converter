@@ -202,102 +202,185 @@ def func8(b: str):
         self.assertEqual(func8["interface"], "def func8(b: str):")
 
 
-class TestPlotsSuccess(unittest.TestCase):
+class TestPlotFunctionsExtractorOriginalFile(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = extract_plot_functions()
+
+    def test_number_of_functions(self):
+
+        result = self.result
+        self.assertEqual(len(result), 10)
 
     def test_plot_bar(self):
-        data = pd.DataFrame({"Category": ["A", "B", "C"], "Value": [10, 20, 30]})
-        plot = plot_bar(data, "Category", "Value")
-        self.assertIsInstance(plot, figure)
-        vbars = [r for r in plot.renderers if isinstance(r.glyph, VBar)]
-        self.assertTrue(len(vbars) > 0)
-        self.assertEqual(plot.xaxis.axis_label, "Category")
-        self.assertEqual(plot.yaxis.axis_label, "Value")
-        self.assertEqual(plot.title.text, "Bar Chart")
+
+        result = self.result
+
+        plot_bar_func = next(f for f in result if f["name"] == "plot_bar")
+        self.assertEqual(
+            plot_bar_func["interface"],
+            "def plot_bar(data: pd.DataFrame, category_column: str, value_column: str):",
+        )
+        self.assertTrue(
+            "Create a vertical bar chart from a DataFrame."
+            in plot_bar_func["description"]
+        )
+
+        self.assertTrue("data" in plot_bar_func["dict_args"])
+        self.assertTrue("category_column" in plot_bar_func["dict_args"])
+        self.assertTrue("value_column" in plot_bar_func["dict_args"])
 
     def test_plot_heatmap(self):
-        data = pd.DataFrame(
-            {
-                "x": ["2020", "2021", "2022"],
-                "y": ["Jan", "Feb", "Mar"],
-                "value": [10, 20, 30],
-            }
+
+        result = self.result
+        plot_heatmap_func = next(f for f in result if f["name"] == "plot_heatmap")
+
+        self.assertEqual(
+            plot_heatmap_func["interface"],
+            "def plot_heatmap(data: pd.DataFrame, x_column: str, y_column: str, value_column: str):",
         )
-        plot = plot_heatmap(data, "x", "y", "value")
-        self.assertIsInstance(plot, figure)
-        rects = [r for r in plot.renderers if isinstance(r.glyph, Rect)]
-        self.assertTrue(len(rects) > 0)
-        color_bars = [item for item in plot.right if isinstance(item, ColorBar)]
-        self.assertTrue(len(color_bars) > 0)
+
+        self.assertTrue(
+            "Create a rectangular heatmap plot." in plot_heatmap_func["description"]
+        )
+        self.assertTrue("data" in plot_heatmap_func["dict_args"])
+        self.assertTrue("x_column" in plot_heatmap_func["dict_args"])
+        self.assertTrue("y_column" in plot_heatmap_func["dict_args"])
 
     def test_plot_treemap(self):
-        data = pd.DataFrame(
-            {
-                "Group1": ["A", "A", "B", "B"],
-                "Group2": ["X", "Y", "X", "Y"],
-                "Value": [10, 20, 30, 40],
-            }
+
+        result = self.result
+        plot_treemap_func = next(f for f in result if f["name"] == "plot_treemap")
+
+        self.assertEqual(
+            plot_treemap_func["interface"],
+            "def plot_treemap(data: pd.DataFrame, group_columns: List[str], value_column: str):",
         )
-        plot = plot_treemap(data, ["Group1", "Group2"], "Value")
-        self.assertIsInstance(plot, figure)
+
+        self.assertTrue(
+            "Create a hierarchical treemap." in plot_treemap_func["description"]
+        )
+        self.assertTrue("group_columns" in plot_treemap_func["dict_args"])
+        self.assertTrue("value_column" in plot_treemap_func["dict_args"])
 
     def test_plot_scatter(self):
-        data = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
-        plot = plot_scatter(data, "x", "y")
-        self.assertIsInstance(plot, Plot)
-        scatters = [r for r in plot.renderers if isinstance(r.glyph, Scatter)]
-        self.assertTrue(len(scatters) > 0)
-        self.assertTrue(len(plot.axis) >= 2)  # Check axes are present
+
+        result = self.result
+        plot_scatter_func = next(f for f in result if f["name"] == "plot_scatter")
+
+        self.assertEqual(
+            plot_scatter_func["interface"],
+            "def plot_scatter(data: pd.DataFrame, x_column: str, y_column: str):",
+        )
+
+        self.assertTrue("Create a scatter plot." in plot_scatter_func["description"])
+        self.assertTrue("data" in plot_scatter_func["dict_args"])
+        self.assertTrue("x_column" in plot_scatter_func["dict_args"])
+        self.assertTrue("y_column" in plot_scatter_func["dict_args"])
 
     def test_plot_stacked_area(self):
-        data = pd.DataFrame({"index": [1, 2, 3], "A": [10, 20, 30], "B": [15, 25, 35]})
-        plot = plot_stacked_area(data)
-        self.assertIsInstance(plot, figure)
-        vareas = [r for r in plot.renderers if isinstance(r.glyph, VArea)]
-        self.assertTrue(len(vareas) > 0)
+
+        result = self.result
+        plot_stacked_area_func = next(
+            f for f in result if f["name"] == "plot_stacked_area"
+        )
+
+        self.assertEqual(
+            plot_stacked_area_func["interface"],
+            "def plot_stacked_area(data: pd.DataFrame):",
+        )
+
+        self.assertTrue(
+            "Create a stacked area chart." in plot_stacked_area_func["description"]
+        )
+        self.assertTrue("data" in plot_stacked_area_func["dict_args"])
 
     def test_plot_ridge(self):
-        data = pd.DataFrame(
-            {"A": np.random.normal(0, 1, 100), "B": np.random.normal(1, 1, 100)}
+
+        result = self.result
+        plot_ridge_func = next(f for f in result if f["name"] == "plot_ridge")
+
+        self.assertEqual(
+            plot_ridge_func["interface"],
+            "def plot_ridge(data: pd.DataFrame):",
         )
-        plot = plot_ridge(data)
-        self.assertIsInstance(plot, figure)
-        # Check for patch renderers (ridge lines)
-        patches = [r for r in plot.renderers if isinstance(r.glyph, Patch)]
-        self.assertTrue(len(patches) > 0)
+
+        self.assertTrue(
+            "Create a ridge plot (joyplot) for numeric samples across categories."
+            in plot_ridge_func["description"]
+        )
+        self.assertTrue("data" in plot_ridge_func["dict_args"])
 
     def test_plot_histogram(self):
-        data = pd.DataFrame({"Value": np.random.normal(0, 1, 100)})
-        plot = plot_histogram(data)
-        self.assertIsInstance(plot, figure)
-        quads = [r for r in plot.renderers if isinstance(r.glyph, Quad)]
-        lines = [r for r in plot.renderers if isinstance(r.glyph, Line)]
-        self.assertTrue(len(quads) > 0 and len(lines) > 0)
+
+        result = self.result
+        plot_histogram_func = next(f for f in result if f["name"] == "plot_histogram")
+
+        self.assertEqual(
+            plot_histogram_func["interface"],
+            "def plot_histogram(data: pd.DataFrame):",
+        )
+
+        self.assertTrue(
+            "Create a histogram for a numeric column."
+            in plot_histogram_func["description"]
+        )
+
+        self.assertTrue("data" in plot_histogram_func["dict_args"])
 
     def test_plot_pie(self):
-        data = pd.DataFrame({"Category": ["A", "B", "C"], "Value": [30, 50, 20]})
-        plot = plot_pie(data, "Category", "Value")
-        self.assertIsInstance(plot, figure)
-        wedges = [r for r in plot.renderers if isinstance(r.glyph, Wedge)]
-        self.assertTrue(len(wedges) > 0)
-        self.assertIsNotNone(plot.legend[0])
+
+        result = self.result
+        plot_pie_func = next(f for f in result if f["name"] == "plot_pie")
+
+        self.assertEqual(
+            plot_pie_func["interface"],
+            "def plot_pie(data: pd.DataFrame, category_column: str, value_column: str):",
+        )
+
+        self.assertTrue(
+            "Create a pie chart from DataFrame columns." in plot_pie_func["description"]
+        )
+
+        self.assertTrue("category_column" in plot_pie_func["dict_args"])
+        self.assertTrue("value_column" in plot_pie_func["dict_args"])
 
     def test_plot_donut(self):
-        data = pd.DataFrame({"Category": ["A", "B", "C"], "Value": [40, 30, 30]})
-        plot = plot_donut(data, "Category", "Value")
-        self.assertIsInstance(plot, figure)
-        annulars = [r for r in plot.renderers if isinstance(r.glyph, AnnularWedge)]
-        self.assertTrue(len(annulars) > 0)
-        self.assertIsNotNone(plot.legend[0])
+
+        result = self.result
+        plot_donut_func = next(f for f in result if f["name"] == "plot_donut")
+
+        self.assertEqual(
+            plot_donut_func["interface"],
+            "def plot_donut(data: pd.DataFrame, category_column: str, value_column: str):",
+        )
+
+        self.assertTrue(
+            "Create a donut chart from DataFrame columns."
+            in plot_donut_func["description"]
+        )
+
+        self.assertTrue("category_column" in plot_donut_func["dict_args"])
+        self.assertTrue("value_column" in plot_donut_func["dict_args"])
 
     def test_plot_box(self):
-        data = pd.DataFrame(
-            {"Category": ["A", "A", "B", "B"], "Value": [10, 15, 20, 25]}
+
+        result = self.result
+        plot_box_func = next(f for f in result if f["name"] == "plot_box")
+
+        self.assertEqual(
+            plot_box_func["interface"],
+            "def plot_box(data: pd.DataFrame, x_column: str, y_column: str):",
         )
-        plot = plot_box(data, "Category", "Value")
-        self.assertIsInstance(plot, figure)
-        vbars = [r for r in plot.renderers if isinstance(r.glyph, VBar)]
-        self.assertTrue(len(vbars) > 0)
-        self.assertTrue(plot.select(dict(type=Whisker)))
+
+        self.assertTrue(
+            "Create a box plot with whiskers from DataFrame columns."
+            in plot_box_func["description"]
+        )
+
+        self.assertTrue("x_column" in plot_box_func["dict_args"])
+        self.assertTrue("y_column" in plot_box_func["dict_args"])
 
 
 class TestPlotFunctions(unittest.TestCase):

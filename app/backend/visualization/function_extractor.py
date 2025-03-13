@@ -129,4 +129,7 @@ def extract_plot_functions():
 
 
 if __name__ == "__main__":
-    extract_plot_functions()
+    data = extract_plot_functions()
+
+    with open("functions.txt", "w") as f:
+        f.write(repr(data))
