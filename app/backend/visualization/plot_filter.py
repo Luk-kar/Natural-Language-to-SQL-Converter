@@ -36,7 +36,7 @@ def filter_compatible_plots(plot_list: list[dict], df: pd.DataFrame) -> list[dic
         and has_numeric_columns(df, 1),
         "plot_scatter": lambda: has_numeric_columns(df, 2),
         "plot_stacked_area": lambda: has_numeric_columns(df, 1),
-        "plot_ridge": lambda: len(df.columns) >= 2  # Minimum 2 columns requirement
+        "plot_ridge": lambda: len(df.columns) >= 2
         and all(pd.api.types.is_numeric_dtype(df[col]) for col in df.columns),
         "plot_histogram": lambda: has_numeric_columns(df, 1),
         "plot_pie": lambda: has_categorical_columns(df, 1)
