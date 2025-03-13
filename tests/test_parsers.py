@@ -27,7 +27,7 @@ class TestExtractSQL(unittest.TestCase):
         )
 
 
-from app.backend.visualization.function_extractor import (
+from app.backend.visualization.plot_extractor import (
     extract_plot_functions,
     PLOTS_PATH,
 )
