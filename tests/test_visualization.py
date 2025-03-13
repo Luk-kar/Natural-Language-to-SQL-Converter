@@ -9,16 +9,12 @@ from bokeh.plotting import figure
 from bokeh.models import (
     Plot,
     Scatter,
-    VBar,
     Wedge,
     Whisker,
     AnnularWedge,
     ColorBar,
     Quad,
-    Rect,
     AnnularWedge,
-    Line,
-    VArea,
 )
 from bokeh.models.glyphs import Patch
 
