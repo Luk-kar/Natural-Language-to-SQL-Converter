@@ -5,14 +5,17 @@ Contains the routes for the Flask application.
 # Flask
 from flask import render_template, request, jsonify, session
 
+# Flask configuration
+from app.backend.flask_configuration import MAX_ROWS_DISPLAY, flask_app
+
 # Database
 from app.backend.database import get_schema, execute_query, DB_CONFIG
 
 # LLM
 from app.backend.llm_engine import generate_sql, generate_describe, MODEL_NAME
 
-# Flask configuration
-from app.backend.flask_configuration import MAX_ROWS_DISPLAY, flask_app
+# Visualization
+from app.backend.visualization.plot_filter import filter_compatible_plots
 
 # Third-party
 import pandas as pd
@@ -89,7 +92,9 @@ def generate_plots():
     df = pd.DataFrame(data)
 
     # Generate a list of compatible plots
-    compatible_plots = filter_compatible_plots(plot_list=plot_list, df=df)
+    compatible_plots = filter_compatible_plots(df=df)
+
+    return jsonify({"plots": compatible_plots})
 
 
 @flask_app.route("/generate_tooltip")

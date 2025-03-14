@@ -29,9 +29,10 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+COPY ./requirements.txt ./app/requirements.txt
 COPY ./app ./app
-RUN pip install --no-cache-dir -r ./app/backend/requirements.txt
 
+RUN pip install --no-cache-dir -r ./app/requirements.txt
 
 # Use a Gunicorn command that imports the correct app module
 # the llm processes cam take a long time to start up, so we set a timeout of 600 seconds

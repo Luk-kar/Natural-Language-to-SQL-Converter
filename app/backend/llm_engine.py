@@ -10,7 +10,8 @@ import re
 from llama_cpp import Llama
 
 # Model Configuration
-MODEL_NAME = "deepseek-coder-6.7b-instruct.Q4_K_M"
+# MODEL_NAME = "deepseek-coder-6.7b-instruct.Q4_K_M"
+MODEL_NAME = "ggml-model-Q4_K_M"
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", f"{MODEL_NAME}.gguf")
 
 LLM = None
@@ -28,8 +29,8 @@ def initialize_llm():
     """Initialize and return the LLM model."""
     return Llama(
         model_path=MODEL_PATH,
-        n_ctx=4096,  # Context window size (adjust as needed)
-        n_threads=4,  # Number of CPU threads
+        # n_ctx=4096,  # Context window size (adjust as needed)
+        # n_threads=4,  # Number of CPU threads
     )
 
 
@@ -79,7 +80,9 @@ def extract_sql(response_text: str) -> str:
     if match:
         return match.group(0).strip()
     else:
-        raise ValueError("Generated SQL does not contain a SELECT statement.")
+        raise ValueError(
+            "Generated SQL does not contain a SELECT statement:\n" + response_text
+        )
 
 
 def generate_describe(schema: str, question: str) -> str:

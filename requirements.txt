@@ -4,3 +4,6 @@ psycopg2-binary==2.9.10
 llama-cpp-python==0.3.7
 bokeh===3.4.3
 pandas==2.2.3
+scipy==1.13.1
+squarify==0.4.4
+colorcet==3.1.0
