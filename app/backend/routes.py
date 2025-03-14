@@ -14,6 +14,9 @@ from app.backend.llm_engine import generate_sql, generate_describe, MODEL_NAME
 # Flask configuration
 from app.backend.flask_configuration import MAX_ROWS_DISPLAY, flask_app
 
+# Third-party
+import pandas as pd
+
 
 @flask_app.route("/", methods=["GET", "POST"])
 def index():
@@ -85,25 +88,8 @@ def generate_plots():
     data = result["execution"]["data"]
     df = pd.DataFrame(data)
 
-    # Extract context from plots.py (e.g., "Best for..." descriptions)
-    plot_context = {
-        "plot_bar": "Best for comparing values across categories",
-        "plot_heatmap": "Best for matrix-like data with two dimensions",
-        "plot_treemap": "Best for hierarchical part-to-whole relationships",
-        # Add other plot types and their descriptions
-    }
-
-    # # Use LLM to determine the best plot type based on data and context
-    # plot_type = determine_best_plot_type(df, plot_context)
-
-    # # Generate plot configuration
-    # plot_config = generate_plot_config(plot_type, df)
-
-    # # Run the plot function
-    # plot = run_plot_function(plot_config)
-
-    # # Return the plot (e.g., as HTML or JSON)
-    # return jsonify({"plot": plot.to_json()})
+    # Generate a list of compatible plots
+    compatible_plots = filter_compatible_plots(plot_list=plot_list, df=df)
 
 
 @flask_app.route("/generate_tooltip")

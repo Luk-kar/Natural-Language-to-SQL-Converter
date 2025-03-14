@@ -1,9 +1,12 @@
-from bokeh.palettes import Category10
+import re
+import inspect
 
-print(len(Category10))
+from app.backend.visualization import plots
 
-print(Category10[3])
+plots_list = [
+    name
+    for name, obj in inspect.getmembers(plots, inspect.isfunction)
+    if re.match(r"plot_.+", name)
+]
 
-for i, pallet in enumerate(Category10):
-    print(f"pallete: {i}")
-    print(pallet)
+print(plots_list)

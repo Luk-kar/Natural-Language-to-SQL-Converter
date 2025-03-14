@@ -48,6 +48,7 @@ from app.backend.visualization.plots import (
     plot_box,
 )
 from app.backend.visualization.plot_filter import filter_compatible_plots
+from app.backend.visualization.generator import validate_plot_function_names
 
 
 class TestPlotFunctionsExtractor(unittest.TestCase):
@@ -418,6 +419,21 @@ class TestPlotFunctions(unittest.TestCase):
                 "y_val": np.random.rand(4),
             }
         )
+        self.time_data = pd.DataFrame(
+            {
+                "index": range(5),
+                "series1": [1, 2, 3, 4, 5],
+                "series2": [2, 3, 4, 5, 6],
+                "series3": [5, 4, 3, 2, 1],
+            }
+        ).reset_index(drop=True)
+        self.ridge_data = pd.DataFrame(
+            {
+                "A": np.random.normal(0, 1, 100),
+                "B": np.random.normal(1, 1, 100),
+                "C": np.random.normal(2, 1, 100),
+            }
+        )
 
     def test_plot_bar(self):
         plot = plot_bar(
@@ -508,6 +524,48 @@ class TestPlotFunctions(unittest.TestCase):
         with self.assertRaises(ValueError):
             plot_pie(self.sample_data, "invalid", "columns")
 
+    # === New tests for added parameters ===
+
+    def test_plot_histogram_with_value_column(self):
+
+        plot = plot_histogram(
+            self.sample_data, value_column="value", title="Other Value Histogram"
+        )
+        self.assertIsInstance(plot, figure)
+
+        self.assertEqual(plot.xaxis[0].axis_label, "value")
+
+    def test_plot_stacked_area_with_to_include_only(self):
+
+        to_include = ["series1", "series3"]
+        plot = plot_stacked_area(
+            self.time_data, to_include_only=to_include, title="Subset Stacked Area"
+        )
+        self.assertIsInstance(plot, figure)
+
+        if plot.legend:
+
+            legend_labels = [item.label["value"] for item in plot.legend[0].items]
+
+            for label in to_include:
+                self.assertIn(label, legend_labels)
+        else:
+            self.fail("No legend found in stacked area plot.")
+
+    def test_plot_ridge_with_to_include_only(self):
+
+        to_include = ["A", "C"]
+        plot = plot_ridge(
+            self.ridge_data, to_include_only=to_include, title="Subset Ridge Chart"
+        )
+        self.assertIsInstance(plot, figure)
+
+        patches = [r for r in plot.renderers if getattr(r, "name", None) == "patches"]
+        self.assertEqual(len(patches), len(to_include))
+
+        expected_y_range = to_include[::-1]
+        self.assertEqual(plot.y_range.factors, expected_y_range)
+
 
 class TestFilterCompatiblePlots(unittest.TestCase):
     """
@@ -516,21 +574,23 @@ class TestFilterCompatiblePlots(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.plot_list = [
-            {"name": name}
-            for name in [
-                "plot_bar",
-                "plot_heatmap",
-                "plot_treemap",
-                "plot_scatter",
-                "plot_stacked_area",
-                "plot_ridge",
-                "plot_histogram",
-                "plot_pie",
-                "plot_donut",
-                "plot_box",
-            ]
+
+        _plot_list = [
+            "plot_bar",
+            "plot_heatmap",
+            "plot_treemap",
+            "plot_scatter",
+            "plot_stacked_area",
+            "plot_ridge",
+            "plot_histogram",
+            "plot_pie",
+            "plot_donut",
+            "plot_box",
         ]
+
+        validate_plot_function_names(_plot_list)
+
+        cls.plot_list = [{"name": name} for name in _plot_list]
 
     def validate_plot_selection(self, df, expected_plots):
         """Validate plot selection and actual plot generation"""
@@ -586,7 +646,19 @@ class TestFilterCompatiblePlots(unittest.TestCase):
                 "x_column": cat_cols[0] if cat_cols else None,
                 "y_column": numeric_cols[0] if numeric_cols else None,
             },
+            "plot_ridge": {
+                "to_include_only": df.columns.tolist() if not df.empty else None
+            },
+            "plot_stacked_area": {
+                "to_include_only": numeric_cols if numeric_cols else None
+            },
+            "plot_histogram": {
+                "value_column": numeric_cols[0] if numeric_cols else None
+            },
         }
+
+        validate_plot_function_names(arg_mapping.keys())
+
         return arg_mapping.get(plot_name, {})
 
     def test_single_numeric_column(self):

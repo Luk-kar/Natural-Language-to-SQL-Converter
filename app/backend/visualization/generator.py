@@ -3,9 +3,14 @@ This module contains a function that runs a plotting function based on the
 provided JSON/dict configuration.
 """
 
+# Python
+import re
+import inspect
+
 # Third-party
 import pandas as pd
 
+from app.backend.visualization import plots
 from app.backend.visualization.plots import (
     plot_bar,
     plot_heatmap,
@@ -18,6 +23,12 @@ from app.backend.visualization.plots import (
     plot_donut,
     plot_box,
 )
+
+plots_list = [
+    name
+    for name, obj in inspect.getmembers(plots, inspect.isfunction)
+    if re.match(r"plot_.+", name)
+]
 
 
 def run_plot_function(config: dict):
@@ -61,6 +72,8 @@ def run_plot_function(config: dict):
         "box": plot_box,
     }
 
+    validate_plot_function_names(plot_functions.keys())
+
     plot_type = config.get("plot_type")
 
     try:
@@ -77,3 +90,23 @@ def run_plot_function(config: dict):
 
     # Call the selected function using the provided keyword arguments.
     return plot_functions[plot_type](**arguments)
+
+
+def validate_plot_function_names(plot_functions: list[str]):
+    """
+    Validate that the plot function names match the expected
+    """
+
+    expected_keys = set(plot_functions)
+    actual_keys = set(plots_list)
+
+    if expected_keys != actual_keys:
+        diff = {
+            "missing_in_module": list(expected_keys - actual_keys),
+            "unexpected_in_module": list(actual_keys - expected_keys),
+        }
+        raise ValueError(
+            "Plot function names mismatch:\n"
+            f"missing_in_module:    {diff['missing_in_module']}\n"
+            f"unexpected_in_module: {diff['unexpected_in_module']}"
+        )

@@ -5,6 +5,9 @@ Filtering logic for plot items based on DataFrame's column structure requirement
 # Third-party
 import pandas as pd
 
+# Visualization
+from app.backend.visualization.generator import validate_plot_function_names
+
 
 def has_numeric_columns(df: pd.DataFrame, min_count: int = 1) -> bool:
     """Check if DataFrame contains at least min_count numeric columns."""
@@ -51,6 +54,8 @@ def filter_compatible_plots(plot_list: list[dict], df: pd.DataFrame) -> list[dic
         "plot_box": lambda: has_categorical_columns(df, 1)
         and has_numeric_columns(df, 1),
     }
+
+    validate_plot_function_names(plot_requirements.keys())
 
     return [
         plot

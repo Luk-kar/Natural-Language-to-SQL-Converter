@@ -418,6 +418,7 @@ def plot_scatter(
 
 def plot_stacked_area(
     data: pd.DataFrame,
+    to_include_only: list[str] = None,
     title: str = "Stacked Area Chart",
     width: int = 600,
     height: int = 400,
@@ -428,6 +429,7 @@ def plot_stacked_area(
 
     Args:
         data: DataFrame containing the data.
+        to_include_only: List of columns to include in the plot.
         title: Plot title. Defaults to "Stacked Area Chart".
         width: Plot width in pixels. Defaults to 600.
         height: Plot height in pixels. Defaults to 400.
@@ -438,6 +440,10 @@ def plot_stacked_area(
         for col in data.columns
         if col != "index" and pd.api.types.is_numeric_dtype(data[col])
     ]
+
+    if to_include_only:
+        # Filter the stackers to include only those specified
+        stackers = [col for col in stackers if col in to_include_only]
 
     # Calculate the palette automatically if not provided.
     # Use the 'Sunset' palette from tol with a number of colors equal to the number of stackers.
@@ -478,6 +484,7 @@ def plot_stacked_area(
 
 def plot_ridge(
     data: pd.DataFrame,
+    to_include_only: list[str] = None,
     width: int = 900,
     title: str = "Ridge Chart",
 ) -> None:
@@ -487,11 +494,16 @@ def plot_ridge(
 
     Args:
         data: DataFrame where columns are categories and rows are samples.
+        to_include_only: List of categories to include in the plot.
         title: Plot title. Defaults to "Ridge Chart".
         width: Plot width in pixels. Defaults to 900.
     """
     # Use the DataFrame's columns as the categories.
     categories = list(data.columns)
+
+    if to_include_only:
+        # Filter the categories to include only those specified
+        categories = [col for col in categories if col in to_include_only]
 
     # Create a color palette with the correct number of colors.
     palette = [cc.rainbow[i * 15] for i in range(len(categories))]
@@ -512,14 +524,12 @@ def plot_ridge(
 
     source = ColumnDataSource(data={"x": x_values})
 
-    # The categories are the DataFrame's column names (now displayed in the same order)
-    categories = list(data.columns)
     plot = figure(
         y_range=categories[::-1],
         width=width,
         x_range=x_range,
         toolbar_location=None,
-        title=title,  # Add title to the plot
+        title=title,
     )  # Reversed order in y_range
 
     scale = (250 / len(categories)) * (
@@ -557,7 +567,13 @@ def plot_ridge(
     return plot
 
 
-def plot_histogram(data: pd.DataFrame, title="Histogram Chart", width=670, height=400):
+def plot_histogram(
+    data: pd.DataFrame,
+    value_column: str = None,
+    title="Histogram Chart",
+    width=670,
+    height=400,
+):
     """
     Create a histogram for a numeric column.
     Best for distribution of single numerical variable.
@@ -573,8 +589,12 @@ def plot_histogram(data: pd.DataFrame, title="Histogram Chart", width=670, heigh
     if not data.select_dtypes(include=[np.number]).columns.any():
         raise ValueError("The DataFrame must contain at least one numeric column.")
 
-    # Use the first numeric column for the histogram
-    numeric_column = data.select_dtypes(include=[np.number]).columns[0]
+    # Use the first numeric column if none is specified
+    if value_column:
+        numeric_column = value_column
+    else:
+        numeric_column = data.select_dtypes(include=[np.number]).columns[0]
+
     data_values = data[numeric_column].dropna().values  # Extract values and drop NaNs
 
     # Calculate data range with padding
