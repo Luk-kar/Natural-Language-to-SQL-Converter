@@ -1,3 +1,8 @@
+"""
+This script extracts information about the plot functions from the plots.py file.
+"""
+
+# Python
 import ast
 import os
 
@@ -7,8 +12,8 @@ PLOTS_PATH = os.path.join("app", "backend", "visualization", "plots.py")
 def read_code_from_file(filepath: str) -> str:
     """Read the source code from the given file."""
 
-    with open(filepath, "r", encoding="utf-8") as f:
-        return f.read()
+    with open(filepath, "r", encoding="utf-8") as _file:
+        return _file.read()
 
 
 def get_required_and_default_params(node: ast.FunctionDef):

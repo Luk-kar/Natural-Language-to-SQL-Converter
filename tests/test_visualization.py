@@ -1,10 +1,24 @@
-import unittest
-import tempfile
-import os
-from unittest.mock import patch
+"""
+Unit tests for the visualization module:
 
+- It tests the functions in the plot_extractor.py module
+  that extract plot functions from a Python file.
+
+- It also tests the plot functions in the plots.py
+  module that generate Bokeh plots from a DataFrame.
+"""
+
+# Python
+import unittest
+from unittest.mock import patch
+import os
+import tempfile
+
+# Third-party
 import pandas as pd
 import numpy as np
+
+# Bokeh
 from bokeh.plotting import figure
 from bokeh.models import (
     Plot,
@@ -14,11 +28,10 @@ from bokeh.models import (
     AnnularWedge,
     ColorBar,
     Quad,
-    AnnularWedge,
 )
 from bokeh.models.glyphs import Patch
 
-# Assume the code to test is in a module named 'plot_parser'
+# Visualization
 from app.backend.visualization.plot_extractor import (
     extract_plot_functions,
 )
@@ -38,14 +51,20 @@ from app.backend.visualization.plot_filter import filter_compatible_plots
 
 
 class TestPlotFunctionsExtractor(unittest.TestCase):
+    """
+    Test the plot functions extraction from a Python file.
+    """
+
     def setUp(self):
-        # Create a temporary file
+        """
+        Set up a temporary file for testing the plot functions extraction.
+        """
+
         self.temp_file = tempfile.NamedTemporaryFile(
             mode="w+", delete=False, suffix=".py"
         )
         self.temp_file_name = self.temp_file.name
 
-        # Patch PLOTS_PATH to point to the temporary file
         self.patcher = patch(
             "app.backend.visualization.plot_extractor.PLOTS_PATH",
             self.temp_file_name,
@@ -61,7 +80,7 @@ class TestPlotFunctionsExtractor(unittest.TestCase):
     def write_to_temp_file(self, content):
         """Helper to write content to the temporary file."""
 
-        with open(self.temp_file_name, "w") as f:
+        with open(self.temp_file_name, "w", encoding="utf-8") as f:
             f.write(content.strip())
 
     def test_function_with_required_params_only(self):
@@ -200,6 +219,9 @@ def func8(b: str):
 
 
 class TestPlotFunctionsExtractorOriginalFile(unittest.TestCase):
+    """
+    Test the plot functions extraction from the original plots.py file.
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -381,6 +403,10 @@ class TestPlotFunctionsExtractorOriginalFile(unittest.TestCase):
 
 
 class TestPlotFunctions(unittest.TestCase):
+    """
+    Test the plot functions that generate Bokeh plots from a DataFrame.
+    """
+
     def setUp(self):
         # Common test data setup
         self.sample_data = pd.DataFrame(
@@ -454,14 +480,14 @@ class TestPlotFunctions(unittest.TestCase):
     def test_plot_histogram(self):
         plot = plot_histogram(self.sample_data)
         self.assertIsInstance(plot, figure)
-        self.assertTrue(plot.select(dict(type=Quad)))
+        self.assertTrue(plot.select({"type": Quad}))
 
     def test_plot_pie(self):
         plot = plot_pie(
             self.sample_data, category_column="category", value_column="value"
         )
         self.assertIsInstance(plot, figure)
-        self.assertTrue(plot.select(dict(type=Wedge)))
+        self.assertTrue(plot.select({"type": Wedge}))
 
     def test_plot_donut(self):
         plot = plot_donut(
@@ -484,6 +510,10 @@ class TestPlotFunctions(unittest.TestCase):
 
 
 class TestFilterCompatiblePlots(unittest.TestCase):
+    """
+    Test the plot compatibility filter based on DataFrame column structure.
+    """
+
     @classmethod
     def setUpClass(cls):
         cls.plot_list = [
@@ -504,6 +534,7 @@ class TestFilterCompatiblePlots(unittest.TestCase):
 
     def validate_plot_selection(self, df, expected_plots):
         """Validate plot selection and actual plot generation"""
+
         compatible = filter_compatible_plots(self.plot_list, df)
         selected_names = {p["name"] for p in compatible}
 
@@ -511,11 +542,13 @@ class TestFilterCompatiblePlots(unittest.TestCase):
 
         # Validate plot generation for compatible plots
         for plot_name in selected_names:
+
             plot_func = globals()[plot_name]
             args = self._get_plot_arguments(plot_name, df)
+
             try:
                 plot_func(data=df, **args)
-            except Exception as e:
+            except (ValueError, TypeError) as e:
                 self.fail(f"Plot {plot_name} failed with arguments {args}: {str(e)}")
 
     def _get_plot_arguments(self, plot_name, df):

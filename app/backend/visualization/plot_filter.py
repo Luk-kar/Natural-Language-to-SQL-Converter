@@ -1,3 +1,8 @@
+"""
+Filtering logic for plot items based on DataFrame's column structure requirements.
+"""
+
+# Third-party
 import pandas as pd
 
 
