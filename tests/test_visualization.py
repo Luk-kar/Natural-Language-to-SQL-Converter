@@ -592,13 +592,13 @@ class TestFilterCompatiblePlots(unittest.TestCase):
 
         validate_plot_function_names(_plot_list)
 
-        cls.plot_list = [{"name": name} for name in _plot_list]
+        cls.plot_list = _plot_list
 
     def validate_plot_selection(self, df, expected_plots):
         """Validate plot selection and actual plot generation"""
 
         compatible = filter_compatible_plots(self.plot_list, df)
-        selected_names = {p["name"] for p in compatible}
+        selected_names = {p for p in compatible}
 
         self.assertEqual(selected_names, expected_plots)
 
@@ -718,31 +718,22 @@ class TestFilterCompatiblePlots(unittest.TestCase):
         ridge_df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
         self.assertIn(
             "plot_ridge",
-            [p["name"] for p in filter_compatible_plots(self.plot_list, ridge_df)],
+            [p for p in filter_compatible_plots(self.plot_list, ridge_df)],
         )
 
 
 class TestPlotContextSelector(unittest.TestCase):
-
-    def dump_to_file(self, filename, data):
-        """Helper function to dump data to a file."""
-        with open(filename, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
 
     def test_two_numeric_columns(self):
         """Test that plots requiring numeric data are identified correctly."""
         execution_result = {"columns": ["age", "score"], "data": [[25, 85], [30, 90]]}
         compatible_plots = set(get_compatible_plots(execution_result))
 
-        self.dump_to_file(
-            "test_two_numeric_columns_result.json", list(compatible_plots)
-        )
-
         expected_plots = {
+            "plot_histogram",
+            "plot_stacked_area",
             "plot_scatter",
             "plot_ridge",
-            "plot_stacked_area",
-            "plot_histogram",
         }
         self.assertTrue(
             compatible_plots.issuperset(expected_plots),
@@ -757,11 +748,14 @@ class TestPlotContextSelector(unittest.TestCase):
         }
         compatible_plots = set(get_compatible_plots(execution_result))
 
-        self.dump_to_file(
-            "test_one_categorical_one_numeric_result.json", list(compatible_plots)
-        )
-
-        expected_plots = {"plot_bar", "plot_pie", "plot_donut", "plot_box"}
+        expected_plots = {
+            "plot_histogram",
+            "plot_donut",
+            "plot_stacked_area",
+            "plot_box",
+            "plot_bar",
+            "plot_pie",
+        }
         self.assertTrue(
             compatible_plots.issuperset(expected_plots),
             f"Expected plots include {expected_plots}, got {compatible_plots}",
@@ -792,8 +786,6 @@ class TestPlotContextSelector(unittest.TestCase):
             "data": [["North", "Widget", 150], ["South", "Gadget", 200]],
         }
         compatible_plots = get_compatible_plots(execution_result)
-
-        self.dump_to_file("test_heatmap_compatible_data_result.json", compatible_plots)
 
         self.assertIn(
             "plot_heatmap",
