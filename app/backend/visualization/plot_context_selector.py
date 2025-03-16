@@ -78,3 +78,85 @@ def generate_plot_context(execution_result: dict) -> dict:
         context["error"] = f"Context generation failed:\n{str(e)}"
 
     return context
+
+
+def create_plot_selection_context(plot_context):
+    """
+    Generates a formatted context string for selecting a plot based on the data and available plot functions.
+
+    Args:
+        plot_context (dict): The output from `generate_plot_context`, containing information about compatible plots and data.
+
+    Returns:
+        str: A string containing formatted context to guide an LLM in selecting a plot and its arguments.
+    """
+    compatible_plots = plot_context.get("compatible_plots", [])
+    data_context = plot_context.get("data_context")
+
+    if not isinstance(data_context, dict):
+        raise ValueError("data_context must be a dictionary")
+
+    required_data_keys = ["columns", "sample_3_values"]
+    for key in required_data_keys:
+        if key not in data_context:
+            raise ValueError(f"data_context must contain '{key}'")
+
+    # Build the Available Plots section
+    plots_section = "## Available Plot Types\n\n"
+
+    for plot in compatible_plots:
+
+        name = plot.get("name", "")
+        interface = plot.get("interface", "")
+        description = "\n".join(
+            [line.strip() for line in plot.get("description", "").split("\n")]
+        )
+        dict_args = plot.get("dict_args", {})
+
+        plots_section += f"### {name}\n"
+        plots_section += f"**Function Signature**: `{interface}`\n\n"
+        plots_section += f"**Description**: {description}\n\n"
+        plots_section += "**Required Arguments**:\n"
+
+        for arg, details in dict_args.items():
+            arg_type = details.get("type", "")
+            arg_desc = details.get("description", "")
+            plots_section += f"- `{arg}` ({arg_type}): {arg_desc}\n"
+
+        plots_section += "\n"
+
+    # Build the Data Context section
+    data_section = "## Data Overview\n\n"
+
+    data_section += f"- **Number of Rows**: {data_context.get('row_count')}\n"
+    columns = data_context.get("columns")
+    sample_values = data_context.get("sample_3_values")
+    data_section += "- **Columns**:\n"
+
+    for col, dtype in columns.items():
+        samples = sample_values.get(col)
+        data_section += f"  - `{col}` ({dtype}): Sample values: {samples}\n"
+
+    # Instructions for the LLM
+    instructions = """## Instructions
+1. **Select the Plot Type**: Choose the most appropriate plot based on the data structure and the plot's description.
+2. **Map Arguments to Columns**: For each required argument in the selected plot, specify the corresponding column name from the data. Use the column names exactly as listed in the Data Overview.
+3. **Construct the Configuration**: Return a dictionary with:
+   - `"plot_type"`: The name of the chosen plot (e.g., "plot_bar").
+   - `"arguments"`: A dictionary mapping each plot argument to the appropriate column name (as a string).
+
+**Example Response**:
+```json
+{
+  "plot_type": "plot_bar",
+  "arguments": {
+    "data": "df",
+    "category_column": "category",
+    "value_column": "count"
+  }
+}
+```"""
+
+    # Combine all sections
+    full_context = f"{plots_section}\n{data_section}\n{instructions}"
+    return full_context

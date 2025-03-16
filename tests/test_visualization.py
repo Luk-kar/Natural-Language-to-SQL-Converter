@@ -53,6 +53,7 @@ from app.backend.visualization.generator import validate_plot_function_names
 from app.backend.visualization.plot_context_selector import (
     get_compatible_plots,
     generate_plot_context,
+    create_plot_selection_context,
 )
 
 
@@ -835,7 +836,7 @@ class TestGeneratePlotContext(unittest.TestCase):
 
     @patch("app.backend.visualization.plot_context_selector.get_compatible_plots")
     @patch("app.backend.visualization.plot_context_selector.extract_plot_functions")
-    def test_happy_path(self, mock_extract, mock_get_compatible):
+    def test_valid_plot_extraction(self, mock_extract, mock_get_compatible):
         """Test with valid data and compatible plots"""
 
         # Mock dependencies
@@ -845,7 +846,11 @@ class TestGeneratePlotContext(unittest.TestCase):
                 "name": "plot_scatter",
                 "interface": "def plot_scatter(df, x, y)",
                 "description": "Scatter plot visualization",
-                "dict_args": "{'df': None, 'x': None, 'y': None}",
+                "dict_args": {
+                    "df": {"type": "Any", "description": "No description"},
+                    "x": {"type": "Any", "description": "No description"},
+                    "y": {"type": "Any", "description": "No description"},
+                },
             }
         ]
 
@@ -938,6 +943,224 @@ class TestGeneratePlotContext(unittest.TestCase):
         self.assertIsNotNone(context["error"])
         self.assertIn("Invalid data shape", context["error"])
         self.assertEqual(context["compatible_plots"], [])
+
+
+class TestCreatePlotSelectionContext(unittest.TestCase):
+    """Unit tests for the `create_plot_selection_context` function."""
+
+    def test_basic_context_generation(self):
+        """Test context generation with valid input containing multiple plots and complete data."""
+
+        plot_context = {
+            "compatible_plots": [
+                {
+                    "name": "plot_bar",
+                    "interface": "def plot_bar(data: pd.DataFrame, category_column: str, value_column: str):",
+                    "description": "Create a vertical bar chart from a DataFrame.\n    Best for comparing values across categories\n\n    Args:\n        data: DataFrame containing the data.\n        category_column: Column name for the x-axis (categories).\n        value_column: Column name for the bar heights (values).",
+                    "dict_args": {
+                        "data": {
+                            "type": "pd.DataFrame",
+                            "description": "DataFrame containing the data.",
+                        },
+                        "category_column": {
+                            "type": "str",
+                            "description": "Column name for the x-axis (categories).",
+                        },
+                        "value_column": {
+                            "type": "str",
+                            "description": "Column name for the bar heights (values).",
+                        },
+                    },
+                },
+                {
+                    "name": "plot_pie",
+                    "interface": "def plot_pie(data: pd.DataFrame, category_column: str, value_column: str):",
+                    "description": "Create a pie chart.\n    Best for proportional composition.\n\n    Args:\n        data: DataFrame containing the data.",
+                    "dict_args": {
+                        "data": {
+                            "type": "pd.DataFrame",
+                            "description": "DataFrame containing categories and values.",
+                        },
+                        "category_column": {
+                            "type": "str",
+                            "description": "Column with category labels.",
+                        },
+                        "value_column": {
+                            "type": "str",
+                            "description": "Column with numeric values.",
+                        },
+                    },
+                },
+            ],
+            "data_context": {
+                "row_count": 2,
+                "columns": {"category": "object", "count": "int64"},
+                "sample_3_values": {"category": ["A", "B"], "count": [10, 20]},
+            },
+            "error": None,
+        }
+
+        context = create_plot_selection_context(plot_context)
+
+        # Verify sections exist
+        self.assertIn("## Available Plot Types", context)
+        self.assertIn("## Data Overview", context)
+        self.assertIn("## Instructions", context)
+
+        # Verify plot details
+        self.assertIn("### plot_bar", context)
+        self.assertIn(
+            "def plot_bar(data: pd.DataFrame, category_column: str, value_column: str):",
+            context,
+        )
+        self.assertIn(
+            "- `data` (pd.DataFrame): DataFrame containing the data.", context
+        )
+        self.assertIn(
+            "- `category_column` (str): Column name for the x-axis (categories).",
+            context,
+        )
+
+        # Verify data details
+        self.assertIn("- **Number of Rows**: 2", context)
+        self.assertIn("`category` (object): Sample values: ['A', 'B']", context)
+        self.assertIn("`count` (int64): Sample values: [10, 20]", context)
+
+        # Verify instructions
+        self.assertIn("Example Response", context)
+        self.assertIn('"plot_type": "plot_bar"', context)
+
+    def test_empty_compatible_plots(self):
+        """Test handling when no compatible plots are available."""
+
+        plot_context = {
+            "compatible_plots": [],
+            "data_context": {"row_count": 0, "columns": {}, "sample_3_values": {}},
+            "error": None,
+        }
+
+        context = create_plot_selection_context(plot_context)
+
+        self.assertIn("## Available Plot Types", context)
+        self.assertNotIn("### plot_bar", context)  # Ensure no plots are listed
+        self.assertIn("- **Number of Rows**: 0", context)
+
+    def test_missing_data_context_keys(self):
+        """Test robustness when data context has missing keys."""
+
+        plot_context = {
+            "compatible_plots": [
+                {
+                    "name": "plot_test",
+                    "interface": "def plot_test(data: pd.DataFrame):",
+                    "description": "Test plot.",
+                    "dict_args": {
+                        "data": {"type": "pd.DataFrame", "description": "DataFrame."}
+                    },
+                }
+            ],
+            "data_context": {  # Missing row_count and sample_3_values
+                "columns": {"test_col": "float64"}
+            },
+            "error": None,
+        }
+
+        context = create_plot_selection_context(plot_context)
+
+        # Verify default row count
+        self.assertIn("- **Number of Rows**: 0", context)
+        # Verify column without samples
+        self.assertIn("`test_col` (float64): Sample values: []", context)
+
+    def test_plot_with_no_arguments(self):
+        """Test handling of a plot with no required arguments (hypothetical edge case)."""
+        plot_context = {
+            "compatible_plots": [
+                {
+                    "name": "plot_empty",
+                    "interface": "def plot_empty():",
+                    "description": "No arguments needed.",
+                    "dict_args": {},  # No arguments
+                }
+            ],
+            "data_context": {"row_count": 0, "columns": {}, "sample_3_values": {}},
+            "error": None,
+        }
+
+        context = create_plot_selection_context(plot_context)
+
+        self.assertIn("**Required Arguments**:\n", context)
+        self.assertNotIn("- `data`", context)  # No arguments listed
+
+    def test_missing_data_context_keys(self):
+        """Test that missing required data context keys raise errors."""
+
+        plot_context = {
+            "compatible_plots": [
+                {
+                    "name": "plot_test",
+                    "interface": "def plot_test(data: pd.DataFrame):",
+                    "description": "Test plot.",
+                    "dict_args": {
+                        "data": {"type": "pd.DataFrame", "description": "DataFrame."}
+                    },
+                }
+            ],
+            "data_context": {  # Missing required keys: columns and sample_3_values
+                "row_count": 5
+            },
+            "error": None,
+        }
+
+        with self.assertRaises(ValueError) as cm:
+            create_plot_selection_context(plot_context)
+
+        self.assertIn("data_context must contain 'columns'", str(cm.exception))
+
+    def test_missing_sample_values(self):
+        """Test handling of columns missing from sample_3_values shows None."""
+
+        plot_context = {
+            "compatible_plots": [
+                {
+                    "name": "plot_test",
+                    "interface": "def plot_test(data: pd.DataFrame):",
+                    "description": "Test plot.",
+                    "dict_args": {
+                        "data": {"type": "pd.DataFrame", "description": "DataFrame."}
+                    },
+                }
+            ],
+            "data_context": {
+                "row_count": 3,
+                "columns": {"missing_col": "int64", "present_col": "object"},
+                "sample_3_values": {
+                    "present_col": ["X", "Y", "Z"]
+                },  # missing_col omitted
+            },
+            "error": None,
+        }
+
+        context = create_plot_selection_context(plot_context)
+
+        # Verify missing column shows None
+        self.assertIn("`missing_col` (int64): Sample values: None", context)
+        # Verify present column shows actual values
+        self.assertIn("`present_col` (object): Sample values: ['X', 'Y', 'Z']", context)
+
+    def test_invalid_data_context_type(self):
+        """Test that non-dict data_context raises error."""
+
+        plot_context = {
+            "compatible_plots": [],
+            "data_context": "invalid",  # Should be dict
+            "error": None,
+        }
+
+        with self.assertRaises(ValueError) as cm:
+            create_plot_selection_context(plot_context)
+
+        self.assertIn("data_context must be a dictionary", str(cm.exception))
 
 
 if __name__ == "__main__":
