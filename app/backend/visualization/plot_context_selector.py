@@ -59,6 +59,7 @@ def generate_plot_context(execution_result: dict) -> dict:
                 "name": plot["name"],
                 "interface": plot.get("interface", ""),
                 "description": plot.get("description", ""),
+                "dict_args": plot.get("dict_args", {}),
             }
             for plot in filtered_plots
         ]
@@ -68,7 +69,7 @@ def generate_plot_context(execution_result: dict) -> dict:
         context["data_context"] = {
             "row_count": len(df),
             "columns": {col: str(df[col].dtype) for col in df.columns},
-            "sample_values": {
+            "sample_3_values": {
                 col: df[col].dropna().head(3).tolist() for col in df.columns
             },
         }

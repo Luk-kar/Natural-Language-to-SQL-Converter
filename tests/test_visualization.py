@@ -108,8 +108,15 @@ def func1(a: int, b: str):
         self.assertEqual(func["interface"], "def func1(a: int, b: str):")
         self.assertIn("a: Integer parameter.", func["description"])
         self.assertIn("b: String parameter.", func["description"])
-        self.assertIn('"a": None, # int: Integer parameter.', func["dict_args"])
-        self.assertIn('"b": None, # str: String parameter.', func["dict_args"])
+        self.assertIn("a", func["dict_args"])
+        self.assertEqual(
+            func["dict_args"]["a"], {"type": "int", "description": "Integer parameter."}
+        )
+        self.assertIn("b", func["dict_args"])
+        self.assertEqual(
+            func["dict_args"]["b"],
+            {"type": "str", "description": "String parameter."},
+        )
 
     def test_function_with_default_params(self):
         """Test a function with parameters having default values."""
@@ -129,7 +136,12 @@ def func2(a: int, b: str = "default"):
         self.assertEqual(func["interface"], "def func2(a: int):")
         self.assertIn("a: Integer parameter.", func["description"])
         self.assertNotIn("b: String parameter.", func["description"])
-        self.assertIn('"a": None, # int: Integer parameter.', func["dict_args"])
+
+        self.assertIn("a", func["dict_args"])
+        self.assertEqual(
+            func["dict_args"]["a"], {"type": "int", "description": "Integer parameter."}
+        )
+        self
         self.assertNotIn("b", func["dict_args"])
 
     def test_function_with_no_params(self):
@@ -146,7 +158,7 @@ def func3():
         func = result[0]
         self.assertEqual(func["interface"], "def func3():")
         self.assertNotIn("Args:", func["description"])
-        self.assertEqual(func["dict_args"].strip(), "{\n}")
+        self.assertEqual(func["dict_args"], {})
 
     def test_docstring_with_args_and_returns(self):
         """Test docstring containing Args and Returns sections."""
@@ -188,7 +200,10 @@ def func5(a):
         func = result[0]
         self.assertEqual(func["interface"], "def func5(a):")
         self.assertIn("a: Some parameter.", func["description"])
-        self.assertIn('"a": None, # Any: Some parameter.', func["dict_args"])
+        self.assertIn("a", func["dict_args"])
+        self.assertEqual(
+            func["dict_args"]["a"], {"description": "Some parameter.", "type": "Any"}
+        )
 
     def test_function_with_no_docstring(self):
         """Test a function with no docstring."""
@@ -201,7 +216,10 @@ def func6(a: int):
 
         func = result[0]
         self.assertEqual(func["description"], "")
-        self.assertIn('"a": None, # int: No description', func["dict_args"])
+        self.assertIn("a", func["dict_args"])
+        self.assertEqual(
+            func["dict_args"]["a"], {"type": "int", "description": "No description"}
+        )
 
     def test_multiple_functions(self):
         """Test parsing multiple functions."""
@@ -897,7 +915,7 @@ class TestGeneratePlotContext(unittest.TestCase):
         )
 
         # Test sample values
-        samples = context["data_context"]["sample_values"]
+        samples = context["data_context"]["sample_3_values"]
         self.assertEqual(
             samples["category"],
             [sample[0] for sample in self.categorical_numeric_result["data"]],

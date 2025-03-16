@@ -144,21 +144,18 @@ def build_dict_args(docstring: str, required_params: list) -> str:
 
     args_dict = parse_args_from_docstring(docstring)
 
-    dict_args_lines = ["{"]
+    dict_args = {}
 
     for param in required_params:
-
         param_name = param.arg
         type_hint = ast.unparse(param.annotation) if param.annotation else "Any"
         description = args_dict.get(param_name, "No description")
+        dict_args[param_name] = {
+            "type": type_hint,
+            "description": description,
+        }
 
-        dict_args_lines.append(
-            f'    "{param_name}": None, # {type_hint}: {description}'
-        )
-
-    dict_args_lines.append("}")
-
-    return "\n".join(dict_args_lines)
+    return dict_args
 
 
 def parse_args_from_docstring(docstring: str) -> dict:
