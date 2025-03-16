@@ -117,18 +117,18 @@
     
                     // Handle analysis tab content loading
                     if (tabId === 'chart' && tabPane.getAttribute('data-loaded') === 'false') {
-                        fetch('/get_last_sql')
+                        fetch('/generate_plots')
                             .then(response => {
                                 if (!response.ok) throw new Error('Network error');
                                 return response.json();
                             })
                             .then(data => {
-                                tabPane.innerHTML = `Last Generated SQL:<br><pre>${data.sql}</pre>`;
+                                tabPane.innerHTML = `Last Generated Plots:<br><pre>${data.plots}</pre>`;
                                 tabPane.setAttribute('data-loaded', 'true');
                             })
                             .catch(error => {
                                 console.error('Error:', error);
-                                tabPane.innerHTML = 'Error loading SQL';
+                                tabPane.innerHTML = 'Error loading Plots';
                             });
                     }
                 }

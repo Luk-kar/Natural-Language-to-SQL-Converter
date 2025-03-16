@@ -16,6 +16,7 @@ from app.backend.llm_engine import generate_sql, generate_describe, MODEL_NAME
 
 # Visualization
 from app.backend.visualization.plot_filter import filter_compatible_plots
+from app.backend.visualization.generator import plots_list
 
 # Third-party
 import pandas as pd
@@ -92,7 +93,7 @@ def generate_plots():
     df = pd.DataFrame(data)
 
     # Generate a list of compatible plots
-    compatible_plots = filter_compatible_plots(df=df)
+    compatible_plots = filter_compatible_plots(plots_list, df)
 
     return jsonify({"plots": compatible_plots})
 

@@ -13,6 +13,7 @@ import unittest
 from unittest.mock import patch
 import os
 import tempfile
+import json
 
 # Third-party
 import pandas as pd
@@ -49,6 +50,7 @@ from app.backend.visualization.plots import (
 )
 from app.backend.visualization.plot_filter import filter_compatible_plots
 from app.backend.visualization.generator import validate_plot_function_names
+from app.backend.visualization.plot_context_selector import get_compatible_plots
 
 
 class TestPlotFunctionsExtractor(unittest.TestCase):
@@ -717,6 +719,86 @@ class TestFilterCompatiblePlots(unittest.TestCase):
         self.assertIn(
             "plot_ridge",
             [p["name"] for p in filter_compatible_plots(self.plot_list, ridge_df)],
+        )
+
+
+class TestPlotContextSelector(unittest.TestCase):
+
+    def dump_to_file(self, filename, data):
+        """Helper function to dump data to a file."""
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+
+    def test_two_numeric_columns(self):
+        """Test that plots requiring numeric data are identified correctly."""
+        execution_result = {"columns": ["age", "score"], "data": [[25, 85], [30, 90]]}
+        compatible_plots = set(get_compatible_plots(execution_result))
+
+        self.dump_to_file(
+            "test_two_numeric_columns_result.json", list(compatible_plots)
+        )
+
+        expected_plots = {
+            "plot_scatter",
+            "plot_ridge",
+            "plot_stacked_area",
+            "plot_histogram",
+        }
+        self.assertTrue(
+            compatible_plots.issuperset(expected_plots),
+            f"Expected plots include {expected_plots}, got {compatible_plots}",
+        )
+
+    def test_one_categorical_one_numeric(self):
+        """Test that plots requiring one categorical and one numeric column are identified."""
+        execution_result = {
+            "columns": ["category", "count"],
+            "data": [["A", 10], ["B", 20]],
+        }
+        compatible_plots = set(get_compatible_plots(execution_result))
+
+        self.dump_to_file(
+            "test_one_categorical_one_numeric_result.json", list(compatible_plots)
+        )
+
+        expected_plots = {"plot_bar", "plot_pie", "plot_donut", "plot_box"}
+        self.assertTrue(
+            compatible_plots.issuperset(expected_plots),
+            f"Expected plots include {expected_plots}, got {compatible_plots}",
+        )
+
+    def test_empty_data(self):
+        """Test that no plots are returned for empty data."""
+        execution_result = {"columns": [], "data": []}
+        compatible_plots = get_compatible_plots(execution_result)
+        self.assertEqual(
+            len(compatible_plots), 0, "Expected no compatible plots for empty data"
+        )
+
+    def test_missing_keys(self):
+        """Test that no plots are returned when required keys are missing."""
+        execution_result = {"error": "Invalid query"}
+        compatible_plots = get_compatible_plots(execution_result)
+        self.assertEqual(
+            len(compatible_plots),
+            0,
+            "Expected no compatible plots when keys are missing",
+        )
+
+    def test_heatmap_compatible_data(self):
+        """Test that heatmap is identified as compatible for two categorical and one numeric column."""
+        execution_result = {
+            "columns": ["region", "product", "sales"],
+            "data": [["North", "Widget", 150], ["South", "Gadget", 200]],
+        }
+        compatible_plots = get_compatible_plots(execution_result)
+
+        self.dump_to_file("test_heatmap_compatible_data_result.json", compatible_plots)
+
+        self.assertIn(
+            "plot_heatmap",
+            compatible_plots,
+            "Heatmap should be compatible with two categorical and one numeric column",
         )
 
 

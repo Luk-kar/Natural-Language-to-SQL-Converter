@@ -1,0 +1,8 @@
+[
+    "plot_box",
+    "plot_histogram",
+    "plot_donut",
+    "plot_pie",
+    "plot_stacked_area",
+    "plot_bar"
+]

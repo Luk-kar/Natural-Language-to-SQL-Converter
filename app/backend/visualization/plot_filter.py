@@ -19,7 +19,7 @@ def has_categorical_columns(df: pd.DataFrame, min_count: int = 1) -> bool:
     return len(df.select_dtypes(exclude=["number"]).columns) >= min_count
 
 
-def filter_compatible_plots(plot_list: list[dict], df: pd.DataFrame) -> list[dict]:
+def filter_compatible_plots(plot_list: list[str], df: pd.DataFrame) -> list[dict]:
     """
     Filters plot items based on DataFrame's column structure requirements.
 
@@ -60,5 +60,5 @@ def filter_compatible_plots(plot_list: list[dict], df: pd.DataFrame) -> list[dic
     return [
         plot
         for plot in plot_list
-        if plot["name"] in plot_requirements and plot_requirements[plot["name"]]()
+        if plot in plot_requirements and plot_requirements[plot]()
     ]
