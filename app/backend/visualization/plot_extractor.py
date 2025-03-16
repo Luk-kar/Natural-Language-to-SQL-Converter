@@ -9,6 +9,36 @@ import os
 PLOTS_PATH = os.path.join("app", "backend", "visualization", "plots.py")
 
 
+def extract_plot_functions():
+    """Extract functions information from the plots file."""
+
+    code = read_code_from_file(PLOTS_PATH)
+    functions = []
+    abstract_syntax_tree = ast.parse(code)
+
+    for node in ast.iter_child_nodes(abstract_syntax_tree):
+
+        if isinstance(node, ast.FunctionDef):
+
+            func_info = {
+                "name": node.name,
+                "interface": "",
+                "description": "",
+                "dict_args": "",
+            }
+
+            required_params, default_params = get_required_and_default_params(node)
+            docstring = extract_docstring(node)
+
+            func_info["interface"] = build_interface(node, required_params)
+            func_info["description"] = clean_docstring(docstring, default_params)
+            func_info["dict_args"] = build_dict_args(docstring, required_params)
+
+            functions.append(func_info)
+
+    return functions
+
+
 def read_code_from_file(filepath: str) -> str:
     """Read the source code from the given file."""
 
@@ -129,36 +159,6 @@ def build_dict_args(docstring: str, required_params: list) -> str:
     dict_args_lines.append("}")
 
     return "\n".join(dict_args_lines)
-
-
-def extract_plot_functions():
-    """Extract functions information from the plots file."""
-
-    code = read_code_from_file(PLOTS_PATH)
-    functions = []
-    abstract_syntax_tree = ast.parse(code)
-
-    for node in ast.iter_child_nodes(abstract_syntax_tree):
-
-        if isinstance(node, ast.FunctionDef):
-
-            func_info = {
-                "name": node.name,
-                "interface": "",
-                "description": "",
-                "dict_args": "",
-            }
-
-            required_params, default_params = get_required_and_default_params(node)
-            docstring = extract_docstring(node)
-
-            func_info["interface"] = build_interface(node, required_params)
-            func_info["description"] = clean_docstring(docstring, default_params)
-            func_info["dict_args"] = build_dict_args(docstring, required_params)
-
-            functions.append(func_info)
-
-    return functions
 
 
 def parse_args_from_docstring(docstring: str) -> dict:

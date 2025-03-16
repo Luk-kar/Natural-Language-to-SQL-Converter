@@ -50,7 +50,10 @@ from app.backend.visualization.plots import (
 )
 from app.backend.visualization.plot_filter import filter_compatible_plots
 from app.backend.visualization.generator import validate_plot_function_names
-from app.backend.visualization.plot_context_selector import get_compatible_plots
+from app.backend.visualization.plot_context_selector import (
+    get_compatible_plots,
+    generate_plot_context,
+)
 
 
 class TestPlotFunctionsExtractor(unittest.TestCase):
@@ -786,14 +789,137 @@ class TestPlotContextSelector(unittest.TestCase):
         )
 
     def test_missing_keys(self):
-        """Test that no plots are returned when required keys are missing."""
+        """Test that a ValueError is raised when required keys are missing."""
+
         execution_result = {"error": "Invalid query"}
-        compatible_plots = get_compatible_plots(execution_result)
+        with self.assertRaises(ValueError) as context:
+            get_compatible_plots(execution_result)
+
+        self.assertIn("Invalid execution result format", str(context.exception))
+
+
+class TestGeneratePlotContext(unittest.TestCase):
+    def setUp(self):
+        self.valid_execution_result = {
+            "columns": ["age", "score"],
+            "data": [[25, 85], [30, 90], [35, 95]],
+        }
+
+        self.categorical_numeric_result = {
+            "columns": ["category", "count"],
+            "data": [["A", 10], ["B", 20]],
+        }
+
+        self.only_categorical_result = {
+            "columns": ["category"],
+            "data": [["A"], ["B"], ["C"]],
+        }
+
+    @patch("app.backend.visualization.plot_context_selector.get_compatible_plots")
+    @patch("app.backend.visualization.plot_context_selector.extract_plot_functions")
+    def test_happy_path(self, mock_extract, mock_get_compatible):
+        """Test with valid data and compatible plots"""
+
+        # Mock dependencies
+        mock_get_compatible.return_value = ["plot_scatter"]
+        mock_extract.return_value = [
+            {
+                "name": "plot_scatter",
+                "interface": "def plot_scatter(df, x, y)",
+                "description": "Scatter plot visualization",
+                "dict_args": "{'df': None, 'x': None, 'y': None}",
+            }
+        ]
+
+        context = generate_plot_context(self.valid_execution_result)
+
+        # Test compatible plots
+        self.assertEqual(len(context["compatible_plots"]), 1)
+        self.assertEqual(context["compatible_plots"][0]["name"], "plot_scatter")
+        self.assertIn("interface", context["compatible_plots"][0])
+
+        # Test data context
+        self.assertEqual(context["data_context"]["row_count"], 3)
         self.assertEqual(
-            len(compatible_plots),
-            0,
-            f"Expected no compatible plots when keys are missing, got:\n{compatible_plots}",
+            context["data_context"]["columns"], {"age": "int64", "score": "int64"}
         )
+        self.assertEqual(context["error"], None)
+
+    @patch("app.backend.visualization.plot_context_selector.get_compatible_plots")
+    def test_no_compatible_plots(self, mock_get_compatible):
+        """Test when no plots are compatible"""
+
+        mock_get_compatible.return_value = []
+
+        context = generate_plot_context(self.only_categorical_result)
+
+        self.assertEqual(context["compatible_plots"], [])
+        self.assertEqual(context["data_context"]["row_count"], 3)
+        self.assertEqual(context["error"], None)
+
+    def test_invalid_execution_result(self):
+        """Test with missing required keys"""
+        invalid_result = {"error": "Invalid query"}
+        context = generate_plot_context(invalid_result)
+
+        self.assertIsNotNone(context["error"])
+        self.assertIn("Invalid execution result format", context["error"])
+        self.assertEqual(context["data_context"], {})
+
+    def test_empty_data(self):
+        """Test with empty dataset"""
+        empty_result = {"columns": [], "data": []}
+        context = generate_plot_context(empty_result)
+
+        self.assertEqual(context["compatible_plots"], [])
+        self.assertEqual(context["data_context"]["row_count"], 0)
+        self.assertEqual(context["data_context"]["columns"], {})
+        self.assertEqual(context["error"], None)
+
+    @patch("app.backend.visualization.plot_context_selector.extract_plot_functions")
+    def test_extract_plots_failure(self, mock_extract):
+        """Test error handling when extract_plot_functions fails"""
+        mock_extract.side_effect = Exception("File not found")
+
+        context = generate_plot_context(self.valid_execution_result)
+
+        self.assertIsNotNone(context["error"])
+        self.assertIn("File not found", context["error"])
+        self.assertEqual(context["compatible_plots"], [])
+
+    def test_data_context_structure(self):
+        """Verify complete data context structure"""
+        context = generate_plot_context(self.categorical_numeric_result)
+
+        # Test column types
+        self.assertEqual(
+            context["data_context"]["columns"], {"category": "object", "count": "int64"}
+        )
+
+        # Test sample values
+        samples = context["data_context"]["sample_values"]
+        self.assertEqual(
+            samples["category"],
+            [sample[0] for sample in self.categorical_numeric_result["data"]],
+        )
+        self.assertEqual(
+            samples["count"],
+            [sample[1] for sample in self.categorical_numeric_result["data"]],
+        )
+
+        # Test row count
+        self.assertEqual(context["data_context"]["row_count"], 2)
+
+    @patch("app.backend.visualization.plot_context_selector.pd.DataFrame")
+    def test_dataframe_creation_failure(self, mock_df):
+        """Test error handling in DataFrame creation"""
+        mock_df.side_effect = Exception("Invalid data shape")
+
+        context = generate_plot_context(self.valid_execution_result)
+
+        self.assertIsNotNone(context["error"])
+        self.assertIn("Invalid data shape", context["error"])
+        self.assertEqual(context["compatible_plots"], [])
 
 
 if __name__ == "__main__":
