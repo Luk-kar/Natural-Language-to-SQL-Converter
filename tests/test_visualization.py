@@ -737,7 +737,7 @@ class TestPlotContextSelector(unittest.TestCase):
         }
         self.assertTrue(
             compatible_plots.issuperset(expected_plots),
-            f"Expected plots include {expected_plots}, got {compatible_plots}",
+            f"Expected plots include:\n{expected_plots}\ngot:\n{compatible_plots}",
         )
 
     def test_one_categorical_one_numeric(self):
@@ -758,25 +758,7 @@ class TestPlotContextSelector(unittest.TestCase):
         }
         self.assertTrue(
             compatible_plots.issuperset(expected_plots),
-            f"Expected plots include {expected_plots}, got {compatible_plots}",
-        )
-
-    def test_empty_data(self):
-        """Test that no plots are returned for empty data."""
-        execution_result = {"columns": [], "data": []}
-        compatible_plots = get_compatible_plots(execution_result)
-        self.assertEqual(
-            len(compatible_plots), 0, "Expected no compatible plots for empty data"
-        )
-
-    def test_missing_keys(self):
-        """Test that no plots are returned when required keys are missing."""
-        execution_result = {"error": "Invalid query"}
-        compatible_plots = get_compatible_plots(execution_result)
-        self.assertEqual(
-            len(compatible_plots),
-            0,
-            "Expected no compatible plots when keys are missing",
+            f"Expected plots include:\n{expected_plots}\ngot:\n{compatible_plots}",
         )
 
     def test_heatmap_compatible_data(self):
@@ -790,7 +772,27 @@ class TestPlotContextSelector(unittest.TestCase):
         self.assertIn(
             "plot_heatmap",
             compatible_plots,
-            "Heatmap should be compatible with two categorical and one numeric column",
+            f"Heatmap should be compatible with two categorical and one numeric column, got:\n{compatible_plots}",
+        )
+
+    def test_empty_data(self):
+        """Test that no plots are returned for empty data."""
+        execution_result = {"columns": [], "data": []}
+        compatible_plots = get_compatible_plots(execution_result)
+        self.assertEqual(
+            len(compatible_plots),
+            0,
+            f"Expected no compatible plots for empty data, got:\n{compatible_plots}",
+        )
+
+    def test_missing_keys(self):
+        """Test that no plots are returned when required keys are missing."""
+        execution_result = {"error": "Invalid query"}
+        compatible_plots = get_compatible_plots(execution_result)
+        self.assertEqual(
+            len(compatible_plots),
+            0,
+            f"Expected no compatible plots when keys are missing, got:\n{compatible_plots}",
         )
 
 
