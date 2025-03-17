@@ -21,7 +21,7 @@ from app.backend.visualization.plots import (
     plot_donut,
     plot_box,
 )
-from app.backend.visualization.generator import run_plot_function
+from app.backend.visualization.generator import get_plot_function
 
 VALID_CONFIGS = {
     "bar": {
@@ -115,6 +115,9 @@ VALID_CONFIGS = {
 
 
 class TestPlots(unittest.TestCase):
+    """
+    Test the plotting functions in the visualization module.
+    """
 
     def test_plot_bar(self):
         plot_bar(**VALID_CONFIGS["bar"])
@@ -147,18 +150,21 @@ class TestPlots(unittest.TestCase):
         plot_box(**VALID_CONFIGS["box"])
 
 
-class TestPlotChooser(unittest.TestCase):
+class TestPlotFunctionSelector(unittest.TestCase):
+    """
+    Test the plot function selector in the visualization module.
+    """
 
-    def test_run_plot_function(self):
+    def test_get_plot_function(self):
         """
-        Test that run_plot_function correctly selects and calls the
+        Test that get_plot_function correctly selects and calls the
         plot_treemap function with the provided keyword arguments.
         """
         config = {
             "plot_type": "treemap",
             "arguments": VALID_CONFIGS["treemap"],
         }
-        plot = run_plot_function(config)
+        plot = get_plot_function(config)
         self.assertIsInstance(plot, Plot)
 
     def test_invalid_plot_type(self):
@@ -174,7 +180,7 @@ class TestPlotChooser(unittest.TestCase):
             },
         }
         with self.assertRaises(ValueError) as context:
-            run_plot_function(config)
+            get_plot_function(config)
         self.assertIn("Invalid plot type specified", str(context.exception))
 
     def test_invalid_data_type(self):
@@ -191,19 +197,19 @@ class TestPlotChooser(unittest.TestCase):
             },
         }
         with self.assertRaises(ValueError) as context:
-            run_plot_function(config)
+            get_plot_function(config)
         self.assertIn("Data must be a pandas DataFrame", str(context.exception))
 
     def test_missing_arguments_key(self):
         """
-        Test that calling run_plot_function without the 'arguments' key raises a ValueError.
+        Test that calling get_plot_function without the 'arguments' key raises a ValueError.
         """
         config = {
             "plot_type": "treemap",
             # Missing 'arguments' key
         }
         with self.assertRaises(ValueError) as context:
-            run_plot_function(config)
+            get_plot_function(config)
         self.assertIn("Invalid arguments provided", str(context.exception))
 
     def test_invalid_arguments_exceed(self):
@@ -217,7 +223,7 @@ class TestPlotChooser(unittest.TestCase):
             "arguments": cfg,
         }
         with self.assertRaises(TypeError) as context:
-            run_plot_function(config)
+            get_plot_function(config)
         self.assertIn("got an unexpected keyword argument", str(context.exception))
 
     def test_invalid_arguments_missing(self):
@@ -231,7 +237,7 @@ class TestPlotChooser(unittest.TestCase):
             "arguments": cfg,
         }
         with self.assertRaises(TypeError) as context:
-            run_plot_function(config)
+            get_plot_function(config)
         self.assertIn("missing 1 required positional argument", str(context.exception))
 
 

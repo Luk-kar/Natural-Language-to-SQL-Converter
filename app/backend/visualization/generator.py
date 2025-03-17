@@ -31,7 +31,7 @@ plots_list = [
 ]
 
 
-def run_plot_function(config: dict):
+def get_plot_function(config: dict):
     """
     Runs a plotting function based on the provided configuration.
 
@@ -56,11 +56,11 @@ def run_plot_function(config: dict):
                 "title": "Treemap Test"
             }
         }
-        plot = run_plot_function(config)
+        plot = get_plot_function(config)
     """
     # Mapping of plot types to their corresponding functions.
     plot_functions = {
-        "plot_bar": plot_bar,
+        "bar": plot_bar,
         "heatmap": plot_heatmap,
         "treemap": plot_treemap,
         "scatter": plot_scatter,
@@ -72,7 +72,7 @@ def run_plot_function(config: dict):
         "box": plot_box,
     }
 
-    validate_plot_function_names(plot_functions.keys())
+    validate_plot_function_names("plot_" + name for name in plot_functions.keys())
 
     plot_type = config.get("plot_type")
 

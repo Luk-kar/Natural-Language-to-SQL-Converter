@@ -51,9 +51,9 @@ from app.backend.visualization.plots import (
 from app.backend.visualization.plot_filter import filter_compatible_plots
 from app.backend.visualization.generator import validate_plot_function_names
 from app.backend.visualization.plot_context_selector import (
-    get_compatible_plots,
-    generate_plot_context,
-    create_plot_selection_context,
+    filter_plots_for_dataset,
+    build_visualization_context,
+    format_plot_selection_instructions,
 )
 
 
@@ -749,7 +749,7 @@ class TestPlotContextSelector(unittest.TestCase):
     def test_two_numeric_columns(self):
         """Test that plots requiring numeric data are identified correctly."""
         execution_result = {"columns": ["age", "score"], "data": [[25, 85], [30, 90]]}
-        compatible_plots = set(get_compatible_plots(execution_result))
+        compatible_plots = set(filter_plots_for_dataset(execution_result))
 
         expected_plots = {
             "plot_histogram",
@@ -768,7 +768,7 @@ class TestPlotContextSelector(unittest.TestCase):
             "columns": ["category", "count"],
             "data": [["A", 10], ["B", 20]],
         }
-        compatible_plots = set(get_compatible_plots(execution_result))
+        compatible_plots = set(filter_plots_for_dataset(execution_result))
 
         expected_plots = {
             "plot_histogram",
@@ -789,7 +789,7 @@ class TestPlotContextSelector(unittest.TestCase):
             "columns": ["region", "product", "sales"],
             "data": [["North", "Widget", 150], ["South", "Gadget", 200]],
         }
-        compatible_plots = get_compatible_plots(execution_result)
+        compatible_plots = filter_plots_for_dataset(execution_result)
 
         self.assertIn(
             "plot_heatmap",
@@ -800,7 +800,7 @@ class TestPlotContextSelector(unittest.TestCase):
     def test_empty_data(self):
         """Test that no plots are returned for empty data."""
         execution_result = {"columns": [], "data": []}
-        compatible_plots = get_compatible_plots(execution_result)
+        compatible_plots = filter_plots_for_dataset(execution_result)
         self.assertEqual(
             len(compatible_plots),
             0,
@@ -812,7 +812,7 @@ class TestPlotContextSelector(unittest.TestCase):
 
         execution_result = {"error": "Invalid query"}
         with self.assertRaises(ValueError) as context:
-            get_compatible_plots(execution_result)
+            filter_plots_for_dataset(execution_result)
 
         self.assertIn("Invalid execution result format", str(context.exception))
 
@@ -834,13 +834,13 @@ class TestGeneratePlotContext(unittest.TestCase):
             "data": [["A"], ["B"], ["C"]],
         }
 
-    @patch("app.backend.visualization.plot_context_selector.get_compatible_plots")
+    @patch("app.backend.visualization.plot_context_selector.filter_plots_for_dataset")
     @patch("app.backend.visualization.plot_context_selector.extract_plot_functions")
-    def test_valid_plot_extraction(self, mock_extract, mock_get_compatible):
+    def test_valid_plot_extraction(self, mock_extract, filter_plots_for_dataset):
         """Test with valid data and compatible plots"""
 
         # Mock dependencies
-        mock_get_compatible.return_value = ["plot_scatter"]
+        filter_plots_for_dataset.return_value = ["plot_scatter"]
         mock_extract.return_value = [
             {
                 "name": "plot_scatter",
@@ -854,7 +854,7 @@ class TestGeneratePlotContext(unittest.TestCase):
             }
         ]
 
-        context = generate_plot_context(self.valid_execution_result)
+        context = build_visualization_context(self.valid_execution_result)
 
         # Test compatible plots
         self.assertEqual(len(context["compatible_plots"]), 1)
@@ -868,13 +868,13 @@ class TestGeneratePlotContext(unittest.TestCase):
         )
         self.assertEqual(context["error"], None)
 
-    @patch("app.backend.visualization.plot_context_selector.get_compatible_plots")
-    def test_no_compatible_plots(self, mock_get_compatible):
+    @patch("app.backend.visualization.plot_context_selector.filter_plots_for_dataset")
+    def test_no_compatible_plots(self, filter_plots_for_dataset):
         """Test when no plots are compatible"""
 
-        mock_get_compatible.return_value = []
+        filter_plots_for_dataset.return_value = []
 
-        context = generate_plot_context(self.only_categorical_result)
+        context = build_visualization_context(self.only_categorical_result)
 
         self.assertEqual(context["compatible_plots"], [])
         self.assertEqual(context["data_context"]["row_count"], 3)
@@ -883,7 +883,7 @@ class TestGeneratePlotContext(unittest.TestCase):
     def test_invalid_execution_result(self):
         """Test with missing required keys"""
         invalid_result = {"error": "Invalid query"}
-        context = generate_plot_context(invalid_result)
+        context = build_visualization_context(invalid_result)
 
         self.assertIsNotNone(context["error"])
         self.assertIn("Invalid execution result format", context["error"])
@@ -892,7 +892,7 @@ class TestGeneratePlotContext(unittest.TestCase):
     def test_empty_data(self):
         """Test with empty dataset"""
         empty_result = {"columns": [], "data": []}
-        context = generate_plot_context(empty_result)
+        context = build_visualization_context(empty_result)
 
         self.assertEqual(context["compatible_plots"], [])
         self.assertEqual(context["data_context"]["row_count"], 0)
@@ -904,7 +904,7 @@ class TestGeneratePlotContext(unittest.TestCase):
         """Test error handling when extract_plot_functions fails"""
         mock_extract.side_effect = Exception("File not found")
 
-        context = generate_plot_context(self.valid_execution_result)
+        context = build_visualization_context(self.valid_execution_result)
 
         self.assertIsNotNone(context["error"])
         self.assertIn("File not found", context["error"])
@@ -912,7 +912,7 @@ class TestGeneratePlotContext(unittest.TestCase):
 
     def test_data_context_structure(self):
         """Verify complete data context structure"""
-        context = generate_plot_context(self.categorical_numeric_result)
+        context = build_visualization_context(self.categorical_numeric_result)
 
         # Test column types
         self.assertEqual(
@@ -938,7 +938,7 @@ class TestGeneratePlotContext(unittest.TestCase):
         """Test error handling in DataFrame creation"""
         mock_df.side_effect = Exception("Invalid data shape")
 
-        context = generate_plot_context(self.valid_execution_result)
+        context = build_visualization_context(self.valid_execution_result)
 
         self.assertIsNotNone(context["error"])
         self.assertIn("Invalid data shape", context["error"])
@@ -1000,7 +1000,7 @@ class TestCreatePlotSelectionContext(unittest.TestCase):
             "error": None,
         }
 
-        context = create_plot_selection_context(plot_context)
+        context = format_plot_selection_instructions(plot_context)
 
         # Verify sections exist
         self.assertIn("## Available Plot Types", context)
@@ -1039,11 +1039,11 @@ class TestCreatePlotSelectionContext(unittest.TestCase):
             "error": None,
         }
 
-        context = create_plot_selection_context(plot_context)
+        context = format_plot_selection_instructions(plot_context)
 
-        self.assertIn("## Available Plot Types", context)
+        self.assertIn("No compatible plots found for the given data.", context)
         self.assertNotIn("### plot_bar", context)  # Ensure no plots are listed
-        self.assertIn("- **Number of Rows**: 0", context)
+        self.assertNotIn("- **Number of Rows**:", context)
 
     def test_missing_data_context_keys(self):
         """Test robustness when data context has missing keys."""
@@ -1065,7 +1065,7 @@ class TestCreatePlotSelectionContext(unittest.TestCase):
             "error": None,
         }
 
-        context = create_plot_selection_context(plot_context)
+        context = format_plot_selection_instructions(plot_context)
 
         # Verify default row count
         self.assertIn("- **Number of Rows**: 0", context)
@@ -1087,7 +1087,7 @@ class TestCreatePlotSelectionContext(unittest.TestCase):
             "error": None,
         }
 
-        context = create_plot_selection_context(plot_context)
+        context = format_plot_selection_instructions(plot_context)
 
         self.assertIn("**Required Arguments**:\n", context)
         self.assertNotIn("- `data`", context)  # No arguments listed
@@ -1113,7 +1113,7 @@ class TestCreatePlotSelectionContext(unittest.TestCase):
         }
 
         with self.assertRaises(ValueError) as cm:
-            create_plot_selection_context(plot_context)
+            format_plot_selection_instructions(plot_context)
 
         self.assertIn("data_context must contain 'columns'", str(cm.exception))
 
@@ -1141,7 +1141,7 @@ class TestCreatePlotSelectionContext(unittest.TestCase):
             "error": None,
         }
 
-        context = create_plot_selection_context(plot_context)
+        context = format_plot_selection_instructions(plot_context)
 
         # Verify missing column shows None
         self.assertIn("`missing_col` (int64): Sample values: None", context)
@@ -1158,7 +1158,7 @@ class TestCreatePlotSelectionContext(unittest.TestCase):
         }
 
         with self.assertRaises(ValueError) as cm:
-            create_plot_selection_context(plot_context)
+            format_plot_selection_instructions(plot_context)
 
         self.assertIn("data_context must be a dictionary", str(cm.exception))
 

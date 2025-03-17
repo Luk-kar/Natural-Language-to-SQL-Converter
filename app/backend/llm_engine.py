@@ -3,6 +3,8 @@ Contains the functions to generate SQL queries and database descriptions using t
 """
 
 # Python
+import ast
+import json
 import os
 import re
 
@@ -29,7 +31,7 @@ def initialize_llm():
     """Initialize and return the LLM model."""
     return Llama(
         model_path=MODEL_PATH,
-        # n_ctx=4096,  # Context window size (adjust as needed)
+        n_ctx=1024,  # Context window size (adjust as needed)
         # n_threads=4,  # Number of CPU threads
     )
 
@@ -61,7 +63,6 @@ def generate_sql(schema: str, question: str) -> str:
 
     response = LLM.create_completion(
         prompt=prompt,
-        max_tokens=256,
         temperature=0.7,
         stop=["</s>"],  # Stop token (adjust based on model requirements)
     )
@@ -114,3 +115,46 @@ def generate_describe(schema: str, question: str) -> str:
         stop=["</s>"],
     )
     return response["choices"][0]["text"].strip()
+
+
+def create_chart_dictionary(prompt: str) -> dict:
+    """
+    Generate a dictionary of arguments for creating a chart using the LLM model,
+    based on the provided prompt.
+    """
+
+    # TODO print the context and output if error occurs
+
+    response = LLM.create_completion(
+        prompt=prompt,
+        temperature=0.7,
+        stop=["</s>"],
+    )
+
+    text = response["choices"][0]["text"].strip()
+
+    # Extract the code block content if present
+    code_block_pattern = re.compile(r"```.*?\n(.*?)```", re.DOTALL)
+    match = code_block_pattern.search(text)
+    if match:
+        dict_str = match.group(1).strip()
+    else:
+        dict_str = text.strip()
+
+    # Attempt to parse the extracted string as JSON
+    try:
+        plot_args = json.loads(dict_str)
+    except json.JSONDecodeError:
+        # If JSON parsing fails, try parsing as a Python literal
+        try:
+            plot_args = ast.literal_eval(dict_str)
+        except (SyntaxError, ValueError) as e:
+            raise ValueError(
+                f"Failed to parse the response as a valid dictionary: {str(e)}"
+            ) from e
+
+    # Ensure the result is a dictionary
+    if not isinstance(plot_args, dict):
+        raise ValueError("The response did not produce a valid dictionary.")
+
+    return plot_args

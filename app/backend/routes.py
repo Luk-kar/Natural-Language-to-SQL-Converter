@@ -12,11 +12,19 @@ from app.backend.flask_configuration import MAX_ROWS_DISPLAY, flask_app
 from app.backend.database import get_schema, execute_query, DB_CONFIG
 
 # LLM
-from app.backend.llm_engine import generate_sql, generate_describe, MODEL_NAME
+from app.backend.llm_engine import (
+    generate_sql,
+    generate_describe,
+    MODEL_NAME,
+    create_chart_dictionary,
+)
 
 # Visualization
-from app.backend.visualization.plot_filter import filter_compatible_plots
-from app.backend.visualization.generator import plots_list
+from app.backend.visualization.plot_context_selector import (
+    build_visualization_context,
+    NO_COMPATIBLE_PLOTS_MESSAGE,
+)
+from app.backend.llm_engine import create_chart_dictionary
 
 # Third-party
 import pandas as pd
@@ -89,13 +97,12 @@ def generate_plots():
     if not result or "execution" not in result or "data" not in result["execution"]:
         return jsonify({"error": "No data available for plotting"})
 
-    data = result["execution"]["data"]
-    df = pd.DataFrame(data)
+    llm_context = build_visualization_context(result["execution"])
 
-    # Generate a list of compatible plots
-    compatible_plots = filter_compatible_plots(plots_list, df)
+    if llm_context == NO_COMPATIBLE_PLOTS_MESSAGE:
+        return jsonify({"error": NO_COMPATIBLE_PLOTS_MESSAGE})
 
-    return jsonify({"plots": compatible_plots})
+    plot_args = create_chart_dictionary(llm_context)
 
 
 @flask_app.route("/generate_tooltip")

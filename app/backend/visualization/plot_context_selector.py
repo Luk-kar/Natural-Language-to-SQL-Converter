@@ -3,46 +3,31 @@ from app.backend.visualization.generator import plots_list
 from app.backend.visualization.plot_filter import filter_compatible_plots
 from app.backend.visualization.plot_extractor import extract_plot_functions
 
+NO_COMPATIBLE_PLOTS_MESSAGE = "No compatible plots found for the given data."
 
-def get_compatible_plots(execution_result: dict) -> list[dict]:
+
+def build_visualization_context(execution_result: dict) -> dict:
     """
-    Determine compatible plots based on the result from an SQL query execution.
+    Build a comprehensive context for visualization generation from an SQL query result.
+
+    The function extracts compatible plot configurations, filters the available
+    plot functions based on compatibility, and summarizes dataset information.
 
     Args:
-        execution_result (dict): The result from execute_query, containing 'columns' and 'data'.
+        execution_result (dict): A dictionary containing 'columns' and 'data' from an SQL query.
 
     Returns:
-        list[dict]: List of compatible plot configurations.
-    """
-    if (
-        not execution_result
-        or "data" not in execution_result
-        or "columns" not in execution_result
-    ):
-        raise ValueError(f"Invalid execution result format.\n{execution_result}")
-
-    try:
-        df = pd.DataFrame(execution_result["data"], columns=execution_result["columns"])
-        return filter_compatible_plots(plots_list, df)
-    except Exception as e:
-        return []
-
-
-def generate_plot_context(execution_result: dict) -> dict:
-    """
-    Generate context for the Lineage Link Mapper based on the result from an SQL query execution.
-
-    Args:
-        execution_result (dict): The result from execute_query, containing 'columns' and 'data'.
-
-    Returns:
-        dict: Context for the Lineage Link Mapper.
+        dict: A context dictionary that includes:
+            - 'compatible_plots': A list of available and compatible plot configurations.
+            - 'data_context': Information about the dataset including row count,
+                              column types, and sample values.
+            - 'error': An error message if context generation fails.
     """
     context = {"compatible_plots": [], "data_context": {}, "error": None}
 
     try:
         # Get compatible plot names from previous filtering
-        compatible_plots = get_compatible_plots(execution_result)
+        compatible_plots = filter_plots_for_dataset(execution_result)
         compatible_names = set(compatible_plots)
 
         # Get all available plot functions from the codebase
@@ -80,21 +65,64 @@ def generate_plot_context(execution_result: dict) -> dict:
     return context
 
 
-def create_plot_selection_context(plot_context):
+def filter_plots_for_dataset(execution_result: dict) -> list[dict]:
     """
-    Generates a formatted context string for selecting a plot based on the data and available plot functions.
+    Identify plot configurations that are compatible with the given SQL query result.
+
+    This function converts the query execution result into a DataFrame and uses
+    a filtering utility to determine which plot types can be used with the data.
 
     Args:
-        plot_context (dict): The output from `generate_plot_context`, containing information about compatible plots and data.
+        execution_result (dict): A dictionary containing 'columns' and 'data' from an SQL query.
 
     Returns:
-        str: A string containing formatted context to guide an LLM in selecting a plot and its arguments.
+        list[dict]: A list of plot configurations that are compatible with the dataset.
+
+    Raises:
+        ValueError: If the execution result format is invalid.
     """
+    if (
+        not execution_result
+        or "data" not in execution_result
+        or "columns" not in execution_result
+    ):
+        raise ValueError(f"Invalid execution result format.\n{execution_result}")
+
+    try:
+        df = pd.DataFrame(execution_result["data"], columns=execution_result["columns"])
+        return filter_compatible_plots(plots_list, df)
+    except Exception as e:
+        return []
+
+
+def format_plot_selection_instructions(plot_context: dict) -> str:
+    """
+    Format a detailed instruction string to guide plot selection based on data context.
+
+    This function constructs a multi-section text that includes available plot types,
+    a summary of the dataset, and step-by-step instructions for mapping data columns
+    to the selected plot's required arguments.
+
+    Args:
+        plot_context (dict): A dictionary containing 'compatible_plots' and 'data_context'
+                             generated from the SQL query result.
+
+    Returns:
+        str: A formatted string with sections for available plots, dataset overview,
+             and explicit instructions for selecting and configuring a plot.
+
+    Raises:
+        ValueError: If the dataset context does not contain required keys.
+    """
+
     compatible_plots = plot_context.get("compatible_plots", [])
     data_context = plot_context.get("data_context")
 
     if not isinstance(data_context, dict):
         raise ValueError("data_context must be a dictionary")
+
+    if not compatible_plots:
+        return NO_COMPATIBLE_PLOTS_MESSAGE
 
     required_data_keys = ["columns", "sample_3_values"]
     for key in required_data_keys:
