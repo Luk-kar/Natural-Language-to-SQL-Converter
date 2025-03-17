@@ -1,7 +1,9 @@
 import pandas as pd
 from app.backend.visualization.generator import plots_list
 from app.backend.visualization.plot_filter import filter_compatible_plots
-from app.backend.visualization.plot_extractor import extract_plot_functions
+from app.backend.visualization.plot_details_extractor import (
+    retrieve_plot_function_details,
+)
 
 NO_COMPATIBLE_PLOTS_MESSAGE = "No compatible plots found for the given data."
 
@@ -31,7 +33,7 @@ def build_visualization_context(execution_result: dict) -> dict:
         compatible_names = set(compatible_plots)
 
         # Get all available plot functions from the codebase
-        all_plots = extract_plot_functions()
+        all_plots = retrieve_plot_function_details()
 
         # Filter to only include compatible plots
         filtered_plots = [

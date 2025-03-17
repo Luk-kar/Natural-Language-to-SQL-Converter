@@ -1,7 +1,7 @@
 """
 Unit tests for the visualization module:
 
-- It tests the functions in the plot_extractor.py module
+- It tests the functions in the plot_details_extractor.py module
   that extract plot functions from a Python file.
 
 - It also tests the plot functions in the plots.py
@@ -33,8 +33,8 @@ from bokeh.models import (
 from bokeh.models.glyphs import Patch
 
 # Visualization
-from app.backend.visualization.plot_extractor import (
-    extract_plot_functions,
+from app.backend.visualization.plot_details_extractor import (
+    retrieve_plot_function_details,
 )
 from app.backend.visualization.plots import (
     plot_bar,
@@ -73,7 +73,7 @@ class TestPlotFunctionsExtractor(unittest.TestCase):
         self.temp_file_name = self.temp_file.name
 
         self.patcher = patch(
-            "app.backend.visualization.plot_extractor.PLOTS_PATH",
+            "app.backend.visualization.plot_details_extractor.PLOTS_PATH",
             self.temp_file_name,
         )
         self.patcher.start()
@@ -101,7 +101,7 @@ def func1(a: int, b: str):
     pass
 """
         self.write_to_temp_file(content)
-        result = extract_plot_functions()
+        result = retrieve_plot_function_details()
 
         self.assertEqual(len(result), 1)
         func = result[0]
@@ -130,7 +130,7 @@ def func2(a: int, b: str = "default"):
     pass
 """
         self.write_to_temp_file(content)
-        result = extract_plot_functions()
+        result = retrieve_plot_function_details()
 
         self.assertEqual(len(result), 1)
         func = result[0]
@@ -153,7 +153,7 @@ def func3():
     pass
 """
         self.write_to_temp_file(content)
-        result = extract_plot_functions()
+        result = retrieve_plot_function_details()
 
         self.assertEqual(len(result), 1)
         func = result[0]
@@ -173,7 +173,7 @@ def func4(a: int):
     return a
 """
         self.write_to_temp_file(content)
-        result = extract_plot_functions()
+        result = retrieve_plot_function_details()
 
         func = result[0]
         self.assertIn("Args:", func["description"])
@@ -196,7 +196,7 @@ def func5(a):
     pass
 """
         self.write_to_temp_file(content)
-        result = extract_plot_functions()
+        result = retrieve_plot_function_details()
 
         func = result[0]
         self.assertEqual(func["interface"], "def func5(a):")
@@ -213,7 +213,7 @@ def func6(a: int):
     pass
 """
         self.write_to_temp_file(content)
-        result = extract_plot_functions()
+        result = retrieve_plot_function_details()
 
         func = result[0]
         self.assertEqual(func["description"], "")
@@ -234,7 +234,7 @@ def func8(b: str):
     pass
 """
         self.write_to_temp_file(content)
-        result = extract_plot_functions()
+        result = retrieve_plot_function_details()
 
         self.assertEqual(len(result), 2)
         func7 = next(f for f in result if f["name"] == "func7")
@@ -250,7 +250,7 @@ class TestPlotFunctionsExtractorOriginalFile(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.result = extract_plot_functions()
+        cls.result = retrieve_plot_function_details()
 
     def test_number_of_functions(self):
 
@@ -835,7 +835,9 @@ class TestGeneratePlotContext(unittest.TestCase):
         }
 
     @patch("app.backend.visualization.plot_context_selector.filter_plots_for_dataset")
-    @patch("app.backend.visualization.plot_context_selector.extract_plot_functions")
+    @patch(
+        "app.backend.visualization.plot_context_selector.retrieve_plot_function_details"
+    )
     def test_valid_plot_extraction(self, mock_extract, filter_plots_for_dataset):
         """Test with valid data and compatible plots"""
 
@@ -899,9 +901,11 @@ class TestGeneratePlotContext(unittest.TestCase):
         self.assertEqual(context["data_context"]["columns"], {})
         self.assertEqual(context["error"], None)
 
-    @patch("app.backend.visualization.plot_context_selector.extract_plot_functions")
+    @patch(
+        "app.backend.visualization.plot_context_selector.retrieve_plot_function_details"
+    )
     def test_extract_plots_failure(self, mock_extract):
-        """Test error handling when extract_plot_functions fails"""
+        """Test error handling when retrieve_plot_function_details fails"""
         mock_extract.side_effect = Exception("File not found")
 
         context = build_visualization_context(self.valid_execution_result)

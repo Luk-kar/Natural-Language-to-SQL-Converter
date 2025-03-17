@@ -9,10 +9,10 @@ from app.backend.llm_engine import (
     extract_sql,
 )
 
-from app.backend.visualization import plot_extractor
+from app.backend.visualization import plot_details_extractor
 
-from app.backend.visualization.plot_extractor import (
-    extract_plot_functions,
+from app.backend.visualization.plot_details_extractor import (
+    retrieve_plot_function_details,
     PLOTS_PATH,
 )
 
@@ -57,10 +57,10 @@ def func1(a: int, b: str):
 """
         # Mock read_code_from_file to return the test content directly
         with patch(
-            "app.backend.visualization.plot_extractor.read_code_from_file"
+            "app.backend.visualization.plot_details_extractor.read_code_from_file"
         ) as mock_read:
             mock_read.return_value = content.strip()
-            result = extract_plot_functions()
+            result = retrieve_plot_function_details()
 
         self.assertEqual(len(result), 1)
         func = result[0]
@@ -86,10 +86,10 @@ def func2(a: int, b: str = "default"):
     pass
 """
         with patch(
-            "app.backend.visualization.plot_extractor.read_code_from_file"
+            "app.backend.visualization.plot_details_extractor.read_code_from_file"
         ) as mock_read:
             mock_read.return_value = content.strip()
-            result = extract_plot_functions()
+            result = retrieve_plot_function_details()
 
         self.assertEqual(len(result), 1)
         func = result[0]
@@ -109,10 +109,10 @@ def func3():
     pass
 """
         with patch(
-            "app.backend.visualization.plot_extractor.read_code_from_file"
+            "app.backend.visualization.plot_details_extractor.read_code_from_file"
         ) as mock_read:
             mock_read.return_value = content.strip()
-            result = extract_plot_functions()
+            result = retrieve_plot_function_details()
 
         self.assertEqual(len(result), 1)
         func = result[0]
@@ -131,10 +131,10 @@ def func4(a: int):
     return a
 """
         with patch(
-            "app.backend.visualization.plot_extractor.read_code_from_file"
+            "app.backend.visualization.plot_details_extractor.read_code_from_file"
         ) as mock_read:
             mock_read.return_value = content.strip()
-            result = extract_plot_functions()
+            result = retrieve_plot_function_details()
 
         func = result[0]
         self.assertIn("Args:", func["description"])
@@ -155,10 +155,10 @@ def func5(a):
     pass
 """
         with patch(
-            "app.backend.visualization.plot_extractor.read_code_from_file"
+            "app.backend.visualization.plot_details_extractor.read_code_from_file"
         ) as mock_read:
             mock_read.return_value = content.strip()
-            result = extract_plot_functions()
+            result = retrieve_plot_function_details()
 
         func = result[0]
         self.assertEqual(func["interface"], "def func5(a):")
@@ -176,10 +176,10 @@ def func6(a: int):
     pass
 """
         with patch(
-            "app.backend.visualization.plot_extractor.read_code_from_file"
+            "app.backend.visualization.plot_details_extractor.read_code_from_file"
         ) as mock_read:
             mock_read.return_value = content.strip()
-            result = extract_plot_functions()
+            result = retrieve_plot_function_details()
 
         func = result[0]
         self.assertEqual(func["description"], "")
@@ -202,10 +202,10 @@ def func8(b: str):
     pass
 """
         with patch(
-            "app.backend.visualization.plot_extractor.read_code_from_file"
+            "app.backend.visualization.plot_details_extractor.read_code_from_file"
         ) as mock_read:
             mock_read.return_value = content.strip()
-            result = extract_plot_functions()
+            result = retrieve_plot_function_details()
 
         self.assertEqual(len(result), 2)
         func7 = next(f for f in result if f["name"] == "func7")

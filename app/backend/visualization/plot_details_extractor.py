@@ -9,7 +9,7 @@ import os
 PLOTS_PATH = os.path.join("app", "backend", "visualization", "plots.py")
 
 
-def extract_plot_functions():
+def retrieve_plot_function_details():
     """Extract functions information from the plots file."""
 
     code = read_code_from_file(PLOTS_PATH)
@@ -193,7 +193,7 @@ def parse_args_from_docstring(docstring: str) -> dict:
 
 if __name__ == "__main__":
 
-    data = extract_plot_functions()
+    data = retrieve_plot_function_details()
 
     with open("functions.txt", "w", encoding="utf-8") as f:
         f.write(repr(data))
