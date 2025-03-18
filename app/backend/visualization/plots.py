@@ -429,7 +429,7 @@ def plot_stacked_area(
 
     Args:
         data: DataFrame containing the data.
-        to_include_only: List of columns to include in the plot.
+        to_include_only: List of columns to include in the plot, if not provided, all numeric columns are included.
         title: Plot title. Defaults to "Stacked Area Chart".
         width: Plot width in pixels. Defaults to 600.
         height: Plot height in pixels. Defaults to 400.
@@ -494,7 +494,7 @@ def plot_ridge(
 
     Args:
         data: DataFrame where columns are categories and rows are samples.
-        to_include_only: List of categories to include in the plot.
+        to_include_only: List of categories to include in the plot, if not provided, all columns are included.
         title: Plot title. Defaults to "Ridge Chart".
         width: Plot width in pixels. Defaults to 900.
     """
@@ -580,7 +580,7 @@ def plot_histogram(
 
     Args:
         data: DataFrame containing the data.
-        value_column: Column to plot as a histogram.
+        value_column: Column to plot as a histogram, if not provided, the first numeric column is used.
         title: Plot title. Defaults to "Histogram Chart".
         width: Plot width in pixels. Defaults to 670.
         height: Plot height in pixels. Defaults to 400.
