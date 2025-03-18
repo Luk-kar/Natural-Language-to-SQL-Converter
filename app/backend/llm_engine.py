@@ -123,8 +123,6 @@ def create_chart_dictionary(prompt: str) -> dict:
     based on the provided prompt.
     """
 
-    # TODO print the context and output if error occurs
-
     response = LLM.create_completion(
         prompt=prompt,
         temperature=0.7,

@@ -1165,6 +1165,64 @@ class TestCreatePlotSelectionContext(unittest.TestCase):
 
         self.assertIn("data_context must be a dictionary", str(cm.exception))
 
+    def test_default_parameters_set_to_none(self):
+        """Test handling of parameters with default values set to None in the function definition."""
+
+        plot_context = {
+            "compatible_plots": [
+                {
+                    "name": "plot_scatter",
+                    "interface": "def plot_scatter(data: pd.DataFrame, x_col: str, y_col: str, color: str = None):",
+                    "description": "Create a scatter plot.\n    Useful for showing relationships between two variables.\n\n    Args:\n        data: DataFrame containing the data points.\n        x_col: Column name for the x-axis.\n        y_col: Column name for the y-axis.\n        color: Optional column name for point colors.",
+                    "dict_args": {
+                        "data": {
+                            "type": "pd.DataFrame",
+                            "description": "DataFrame containing the data points.",
+                        },
+                        "x_col": {
+                            "type": "str",
+                            "description": "Column name for the x-axis.",
+                        },
+                        "y_col": {
+                            "type": "str",
+                            "description": "Column name for the y-axis.",
+                        },
+                        "color": {
+                            "type": "str",
+                            "description": "Optional column name for point colors.",
+                        },
+                    },
+                }
+            ],
+            "data_context": {
+                "row_count": 100,
+                "columns": {"x": "float64", "y": "float64", "group": "category"},
+                "sample_3_values": {
+                    "x": [1.5, 2.3, 3.7],
+                    "y": [2.5, 3.1, 4.4],
+                    "group": ["A", "B", "A"],
+                },
+            },
+            "error": None,
+        }
+
+        context = format_plot_selection_instructions(plot_context)
+
+        self.assertIn("color: str = None", context)
+
+        # Verify all parameters are present in the description
+        self.assertIn(
+            "- `data` (pd.DataFrame): DataFrame containing the data points.", context
+        )
+        self.assertIn("- `x_col` (str): Column name for the x-axis.", context)
+        self.assertIn("- `y_col` (str): Column name for the y-axis.", context)
+        self.assertIn(
+            "- `color` (str): Optional column name for point colors.", context
+        )
+
+        # Verify parameters with defaults are not marked as required
+        self.assertIn("color: str = None", context)
+
 
 if __name__ == "__main__":
     unittest.main()
