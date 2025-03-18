@@ -1,7 +1,5 @@
 # Python
 import unittest
-import tempfile
-import os
 from unittest.mock import patch
 
 # LLM
@@ -18,6 +16,13 @@ from app.backend.visualization.plot_details_extractor import (
 
 
 class TestExtractSQL(unittest.TestCase):
+    """
+    Test suite for validating SQL query extraction from natural language text.
+
+    This class tests both successful extraction of complete SELECT statements
+    and proper error handling when no valid SQL is detected.
+    """
+
     def test_extract_sql_positive(self):
         """
         Positive test: valid SQL query embedded in some text
@@ -43,7 +48,17 @@ class TestExtractSQL(unittest.TestCase):
         )
 
 
-class TestPlotFunctionsExtractor(unittest.TestCase):
+class TestPlotInterfaceParser(unittest.TestCase):
+    """
+    Test suite for validating the parsing of plot function metadata from source code.
+
+    This class tests the extraction of function signatures, parameter types,
+    and docstring documentation for various function patterns including:
+    - Required and optional parameters
+    - Type hints and missing type information
+    - Docstring formatting variations
+    - Multi-function file processing
+    """
 
     def test_function_with_required_params_only(self):
         """Test a function with only required parameters."""

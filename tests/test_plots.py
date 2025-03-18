@@ -114,9 +114,13 @@ VALID_CONFIGS = {
 }
 
 
-class TestPlots(unittest.TestCase):
+class TestVisualizationPlotFunctions(unittest.TestCase):
     """
-    Test the plotting functions in the visualization module.
+    Test suite for validating the core visualization plot implementations.
+
+    This class tests the successful generation of Bokeh figures for each plot type
+    using valid configuration presets, ensuring proper glyph creation and basic
+    plot structure validation.
     """
 
     def test_plot_bar(self):
@@ -152,7 +156,13 @@ class TestPlots(unittest.TestCase):
 
 class TestPlotFunctionSelector(unittest.TestCase):
     """
-    Test the plot function selector in the visualization module.
+    Test suite for validating the plot function selection and execution system.
+
+    This class tests:
+    - Correct routing of configuration to appropriate plot functions
+    - Error handling for invalid plot types and configurations
+    - Data validation and type checking
+    - Argument validation and error messaging
     """
 
     def test_get_plot_function(self):

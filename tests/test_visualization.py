@@ -56,9 +56,15 @@ from app.backend.visualization.plot_context_selector import (
 )
 
 
-class TestPlotFunctionsExtractor(unittest.TestCase):
+class TestPlotMetadataExtractor(unittest.TestCase):
     """
-    Test the plot functions extraction from a Python file.
+    Test suite for validating plot function metadata extraction from Python files.
+
+    This class tests the temporary file-based extraction process with:
+    - Dynamic file content generation
+    - Signature parsing with various parameter patterns
+    - Docstring processing and argument description extraction
+    - Cleanup of temporary test artifacts
     """
 
     def setUp(self):
@@ -242,9 +248,15 @@ def func8(b: str):
         self.assertEqual(func8["interface"], "def func8(b: str):")
 
 
-class TestPlotFunctionsExtractorOriginalFile(unittest.TestCase):
+class TestProductionPlotsAnalysis(unittest.TestCase):
     """
-    Test the plot functions extraction from the original plots.py file.
+    Test suite for validating the production plot functions' interface contracts.
+
+    This class tests the real plot implementations against expected:
+    - Function signatures and parameter requirements
+    - Documentation completeness
+    - Argument type annotations
+    - Consistency across all visualization functions
     """
 
     @classmethod
@@ -426,9 +438,15 @@ class TestPlotFunctionsExtractorOriginalFile(unittest.TestCase):
         self.assertTrue("y_column" in plot_box_func["dict_args"])
 
 
-class TestPlotFunctions(unittest.TestCase):
+class TestVisualizationGlyphGeneration(unittest.TestCase):
     """
-    Test the plot functions that generate Bokeh plots from a DataFrame.
+    Test suite for validating Bokeh glyph generation in plot functions.
+
+    This class tests:
+    - Correct creation of specific glyph types (bars, wedges, patches, etc.)
+    - Data-to-visual property mapping
+    - Error handling for invalid column references
+    - Advanced parameter handling and plot customization
     """
 
     def setUp(self):
@@ -590,9 +608,15 @@ class TestPlotFunctions(unittest.TestCase):
         self.assertEqual(plot.y_range.factors, expected_y_range)
 
 
-class TestFilterCompatiblePlots(unittest.TestCase):
+class TestPlotCompatibilityMatrix(unittest.TestCase):
     """
-    Test the plot compatibility filter based on DataFrame column structure.
+    Test suite for validating plot compatibility determination logic.
+
+    This class tests the matching of DataFrame structures to compatible plots:
+    - Automatic argument derivation based on column types
+    - Validation of plot viability across data shapes
+    - End-to-end plot generation for compatible matches
+    - Edge case handling for empty/single-column datasets
     """
 
     @classmethod
@@ -744,6 +768,15 @@ class TestFilterCompatiblePlots(unittest.TestCase):
 
 
 class TestPlotContextSelector(unittest.TestCase):
+    """
+    Test suite for validating plot recommendation based on data characteristics.
+
+    This class tests:
+    - Detection of numeric/categorical column combinations
+    - Appropriate plot type suggestions for different data patterns
+    - Handling of malformed or incomplete dataset inputs
+    - Special case handling for hierarchical and relational data
+    """
 
     def test_two_numeric_columns(self):
         """Test that plots requiring numeric data are identified correctly."""
@@ -816,7 +849,20 @@ class TestPlotContextSelector(unittest.TestCase):
         self.assertIn("Invalid execution result format", str(context.exception))
 
 
-class TestGeneratePlotContext(unittest.TestCase):
+class TestPlotContextBuilder(unittest.TestCase):
+    """
+    Test suite for validating the generation of a comprehensive visualization
+    context from a dataset and compatible plots.
+
+    This class tests the assembly of all necessary metadata for visualization,
+    including:
+    - Extraction of plot function details (name, interface, arguments, descriptions)
+    - Construction of dataset context (row count, column types, sample values)
+    - Error handling for invalid or incomplete input data
+    - Integration of plot compatibility results with dataset metadata
+    - Proper formatting of the final visualization context for downstream use
+    """
+
     def setUp(self):
         self.valid_execution_result = {
             "columns": ["age", "score"],
@@ -949,7 +995,17 @@ class TestGeneratePlotContext(unittest.TestCase):
 
 
 class TestCreatePlotSelectionContext(unittest.TestCase):
-    """Unit tests for the `create_plot_selection_context` function."""
+    """
+    Test suite for validating the generation of plot selection instructions from a visualization context.
+
+    This class tests the transformation of plot metadata and dataset information into
+    structured user instructions, including:
+    - Formatting of available plot types with their descriptions and parameters
+    - Presentation of dataset overview (row count, column types, sample values)
+    - Error handling and messaging for incomplete or invalid context data
+    - Proper rendering of optional parameters and default values
+    - Edge cases such as empty datasets or missing metadata
+    """
 
     def test_basic_context_generation(self):
         """Test context generation with valid input containing multiple plots and complete data."""
