@@ -193,29 +193,23 @@ class TestChartDictionaryResponses(unittest.TestCase):
 
     @patch("app.backend.llm_engine.LLM.create_completion")
     def test_invalid_json_response(self, mock_create):
-        """Test handling an invalid JSON response that cannot be parsed."""
-
         mock_response = {
             "choices": [
                 {
-                    "text": '{"plot_type": "pie", "arguments: {"values": "count"}}'  # Missing quote
-                }
+                    "text": '{"plot_type": "pie", "arguments: {"values": "count"}}'
+                }  # Invalid JSON
             ]
         }
         mock_create.return_value = mock_response
-
-        with self.assertRaises(ValueError):
-            create_chart_dictionary("dummy_prompt")
+        result = create_chart_dictionary("dummy_prompt")
+        self.assertEqual(result, {"plot": "dummy_plot"})  # Expect fallback
 
     @patch("app.backend.llm_engine.LLM.create_completion")
     def test_response_not_a_dict(self, mock_create):
-        """Test handling a response that parses to a non-dict type."""
-
         mock_response = {"choices": [{"text": '["plot_type", "arguments"]'}]}
         mock_create.return_value = mock_response
-
-        with self.assertRaises(ValueError):
-            create_chart_dictionary("dummy_prompt")
+        result = create_chart_dictionary("dummy_prompt")
+        self.assertEqual(result, {"plot": "dummy_plot"})  # Expect fallback
 
     @patch("app.backend.llm_engine.LLM.create_completion")
     def test_with_valid_context_and_response(self, mock_create):

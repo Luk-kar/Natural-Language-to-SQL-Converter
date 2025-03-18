@@ -120,7 +120,9 @@ def generate_describe(schema: str, question: str) -> str:
 def create_chart_dictionary(prompt: str) -> dict:
     """
     Generate a dictionary of arguments for creating a chart using the LLM model,
-    based on the provided prompt.
+    based on the provided prompt. Iterates through all response choices, extracts
+    code blocks, and attempts to parse them or the entire text as JSON/dict.
+    Falls back to a dummy plot if all parsing attempts fail.
     """
 
     response = LLM.create_completion(
@@ -129,30 +131,54 @@ def create_chart_dictionary(prompt: str) -> dict:
         stop=["</s>"],
     )
 
-    text = response["choices"][0]["text"].strip()
-
-    # Extract the code block content if present
     code_block_pattern = re.compile(r"```.*?\n(.*?)```", re.DOTALL)
-    match = code_block_pattern.search(text)
-    if match:
-        dict_str = match.group(1).strip()
-    else:
-        dict_str = text.strip()
 
-    # Attempt to parse the extracted string as JSON
-    try:
-        plot_args = json.loads(dict_str)
-    except json.JSONDecodeError:
-        # If JSON parsing fails, try parsing as a Python literal
+    for choice in response.get("choices", []):
+
+        choice_text = choice.get("text", "").strip()
+
+        if not choice_text:
+            continue
+
+        # Extract all code blocks from the choice text
+        code_blocks = code_block_pattern.findall(choice_text)
+        parsed_dict = None
+
+        # Check each code block for valid JSON or dict
+        for block in code_blocks:
+
+            dict_str = block.strip()
+
+            try:
+                parsed_dict = json.loads(dict_str)
+                if isinstance(parsed_dict, dict):
+                    return parsed_dict
+
+            except json.JSONDecodeError:
+                try:
+                    parsed_dict = ast.literal_eval(dict_str)
+                    if isinstance(parsed_dict, dict):
+                        return parsed_dict
+                except (SyntaxError, ValueError):
+                    continue  # Move to next block if parsing fails
+
+        # If no valid code blocks, check the entire text
         try:
-            plot_args = ast.literal_eval(dict_str)
-        except (SyntaxError, ValueError) as e:
-            raise ValueError(
-                f"Failed to parse the response as a valid dictionary: {str(e)}"
-            ) from e
 
-    # Ensure the result is a dictionary
-    if not isinstance(plot_args, dict):
-        raise ValueError("The response did not produce a valid dictionary.")
+            parsed_dict = json.loads(choice_text)
 
-    return plot_args
+            if isinstance(parsed_dict, dict):
+                return parsed_dict
+
+        except json.JSONDecodeError:
+
+            try:
+                parsed_dict = ast.literal_eval(choice_text)
+                if isinstance(parsed_dict, dict):
+                    return parsed_dict
+
+            except (SyntaxError, ValueError):
+                continue  # Move to next choice if parsing fails
+
+    # Fallback if all choices and parsing attempts fail
+    return {"plot": "dummy_plot"}
