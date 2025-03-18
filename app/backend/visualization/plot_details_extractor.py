@@ -1,5 +1,21 @@
 """
-This script extracts information about the plot functions from the plots.py file.
+This script extracts detailed information about plot functions defined in the plots.py file.
+
+It parses the source code to retrieve each function's:
+- signature
+- docstring
+- parameter details
+cleaning and organizing these elements into a structured list.
+
+In plain English,
+
+the module reads
+the plotting functions' source code,
+extracts metadata about
+how each plot is configured,
+and outputs this information
+so that other components can easily use it
+for automated visualization generation.
 """
 
 # Python

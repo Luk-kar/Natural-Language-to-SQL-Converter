@@ -1,5 +1,11 @@
 """
 Top 10 Bokeh Charts for Data Visualization
+
+All of them return a Bokeh Plot object that can be displayed in
+a Bokeh server or embedded in a web application.
+
+They are mostly meant to be LLM read,
+so the formatting of the interfaces can be optimized for that.
 """
 
 # Python

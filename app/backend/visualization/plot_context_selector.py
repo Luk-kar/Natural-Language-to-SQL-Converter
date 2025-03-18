@@ -1,4 +1,19 @@
+"""
+This module provides functions to generate a visualization context from an SQL query result.
+The visualization context is a structured dictionary that includes:
+- list of compatible plot configurations
+- summary of the dataset (row count, column types, and sample values).
+
+In plain English, it prepares the necessary information
+so that a plotting system or language model can later
+decide which plot to create and how to map data columns
+to the plot’s arguments.
+"""
+
+# Third-party
 import pandas as pd
+
+# Visualization
 from app.backend.visualization.generator import plots_list
 from app.backend.visualization.plot_filter import filter_compatible_plots
 from app.backend.visualization.plot_details_extractor import (

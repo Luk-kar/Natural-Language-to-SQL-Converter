@@ -1,5 +1,13 @@
 """
-Filtering logic for plot items based on DataFrame's column structure requirements.
+Filters compatible plot types based on DataFrame's column structure.
+
+A logic to determine which plot types are compatible
+with a given DataFrame based on its column structure.
+It checks for the presence of numeric and categorical columns
+as required by each plot type,
+ensuring that only
+plots with matching data requirements
+are considered for visualization generation.
 """
 
 # Third-party

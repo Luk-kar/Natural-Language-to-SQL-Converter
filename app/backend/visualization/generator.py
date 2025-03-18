@@ -1,6 +1,16 @@
 """
-This module contains a function that runs a plotting function based on the
-provided JSON/dict configuration.
+Plotting function based on a provided JSON/dict configuration.
+
+It maps a plot type specified in the configuration
+to a corresponding plotting function,
+validates the input data (ensuring it is a pandas DataFrame),
+and executes the plot function
+with the supplied arguments.
+
+In plain English,
+the module acts as a dispatcher that selects
+the appropriate plot from a collection of visualization functions
+and then runs it.
 """
 
 # Python
@@ -33,7 +43,7 @@ plots_list = [
 
 def get_plot_function(config: dict):
     """
-    Runs a plotting function based on the provided configuration.
+    Returns a plot based on the provided data and configuration.
 
     Args:
         config (dict): A dictionary with keys:
@@ -72,7 +82,7 @@ def get_plot_function(config: dict):
         "box": plot_box,
     }
 
-    validate_plot_function_names("plot_" + name for name in plot_functions.keys())
+    validate_plot_function_names("plot_" + name for name in plot_functions)
 
     plot_type = config.get("plot_type")
 
