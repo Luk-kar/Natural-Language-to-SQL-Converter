@@ -47,17 +47,56 @@ def read_code_from_file(filepath: str) -> str:
 
 
 def get_required_and_default_params(node: ast.FunctionDef):
-    """Extract required parameters and default parameter names from a function node."""
+    """Extracts required and default parameters from a function definition node.
 
-    defaults_count = len(node.args.defaults)
+    Required parameters are those without defaults in the signature or body assignments.
+    Default parameters are those explicitly set in the function signature.
+    """
+    parameters = node.args.args
+    num_signature_defaults = len(node.args.defaults)
 
-    required_params = (
-        node.args.args[:-defaults_count] if defaults_count > 0 else node.args.args
+    # Determine parameters with defaults in the function signature
+    signature_defaults = (
+        {param.arg for param in parameters[-num_signature_defaults:]}
+        if num_signature_defaults > 0
+        else set()
     )
 
-    default_params = (
-        [p.arg for p in node.args.args[-defaults_count:]] if defaults_count > 0 else []
-    )
+    # Helper to check if a value node represents None
+    def is_none(value_node):
+        return (isinstance(value_node, ast.Constant) and value_node.value is None) or (
+            hasattr(ast, "Constant")
+            and isinstance(value_node, ast.Constant)
+            and value_node.value is None
+        )
+
+    body_defaults = set()
+    if num_signature_defaults > 0:
+        param_names = {param.arg for param in parameters}
+        for stmt in node.body:
+            # Check for simple assignments (e.g., `param = None`)
+            if not (isinstance(stmt, ast.Assign) and len(stmt.targets) == 1):
+                continue
+
+            target = stmt.targets[0]
+            if not isinstance(target, ast.Name):
+                continue
+
+            param_name = target.id
+            # Skip non-parameters or parameters with existing signature defaults
+            if param_name not in param_names or param_name in signature_defaults:
+                continue
+
+            if is_none(stmt.value):
+                body_defaults.add(param_name)
+
+    # Combine defaults from signature and body
+    all_defaults = signature_defaults.union(body_defaults)
+    required_params = [param for param in parameters if param.arg not in all_defaults]
+    # Default parameters retain their original order from the signature
+    default_params = [
+        param.arg for param in parameters if param.arg in signature_defaults
+    ]
 
     return required_params, default_params
 
@@ -147,9 +186,12 @@ def build_dict_args(docstring: str, required_params: list) -> str:
     dict_args = {}
 
     for param in required_params:
+
         param_name = param.arg
         type_hint = ast.unparse(param.annotation) if param.annotation else "Any"
+
         description = args_dict.get(param_name, "No description")
+
         dict_args[param_name] = {
             "type": type_hint,
             "description": description,

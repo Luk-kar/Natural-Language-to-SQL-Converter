@@ -13,7 +13,6 @@ import unittest
 from unittest.mock import patch
 import os
 import tempfile
-import json
 
 # Third-party
 import pandas as pd
