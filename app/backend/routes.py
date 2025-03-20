@@ -116,10 +116,23 @@ def generate_plots():
 
     llm_context = build_visualization_context(execution)
 
+    return generate_plot_from_config(execution, llm_context, df)
+
+
+def generate_plot_from_config(
+    execution: dict, llm_context: dict, df: pd.DataFrame
+) -> str:
+    """
+    Generate the plot configuration and return the chart JSON.
+    If an error occurs during the configuration or plot generation,
+    returns a JSON error response.
+    """
+
     try:
         # First try LLM-generated config
         plot_config = create_chart_dictionary(llm_context)
-    except Exception as e:
+    except Exception:
+
         try:
             # Fallback to automated config
             plot_config = generate_fallback_plot_config(execution, llm_context)
