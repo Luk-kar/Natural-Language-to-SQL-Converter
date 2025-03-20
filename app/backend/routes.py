@@ -102,7 +102,10 @@ def generate_plots():
     if llm_context == NO_COMPATIBLE_PLOTS_MESSAGE:
         return jsonify({"error": NO_COMPATIBLE_PLOTS_MESSAGE})
 
-    plot_args = create_chart_dictionary(llm_context)
+    try:
+        plot_args = create_chart_dictionary(llm_context)
+    except Exception as e:
+        pass
 
 
 @flask_app.route("/generate_tooltip")

@@ -193,23 +193,39 @@ class TestChartDictionaryResponses(unittest.TestCase):
 
     @patch("app.backend.llm_engine.LLM.create_completion")
     def test_invalid_json_response(self, mock_create):
+
         mock_response = {
             "choices": [
                 {
-                    "text": '{"plot_type": "pie", "arguments: {"values": "count"}}'
-                }  # Invalid JSON
+                    "text": '{"plot_type": "pie", "arguments: {"values": "count"}}'  # Missing quote
+                }
             ]
         }
         mock_create.return_value = mock_response
-        result = create_chart_dictionary("dummy_prompt")
-        self.assertEqual(result, {"plot": "dummy_plot"})  # Expect fallback
+
+        with self.assertRaises(ValueError) as cm:
+            create_chart_dictionary("dummy_prompt")
+
+        self.assertIn(
+            "Failed to generate a valid chart configuration", str(cm.exception)
+        )
 
     @patch("app.backend.llm_engine.LLM.create_completion")
     def test_response_not_a_dict(self, mock_create):
-        mock_response = {"choices": [{"text": '["plot_type", "arguments"]'}]}
+
+        mock_response = {
+            "choices": [
+                {"text": '["plot_type", "arguments"]'}  # Returns list instead of dict
+            ]
+        }
         mock_create.return_value = mock_response
-        result = create_chart_dictionary("dummy_prompt")
-        self.assertEqual(result, {"plot": "dummy_plot"})  # Expect fallback
+
+        with self.assertRaises(ValueError) as cm:
+            create_chart_dictionary("dummy_prompt")
+
+        self.assertIn(
+            "Failed to generate a valid chart configuration", str(cm.exception)
+        )
 
     @patch("app.backend.llm_engine.LLM.create_completion")
     def test_with_valid_context_and_response(self, mock_create):

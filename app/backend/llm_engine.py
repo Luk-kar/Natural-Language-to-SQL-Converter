@@ -180,5 +180,4 @@ def create_chart_dictionary(prompt: str) -> dict:
             except (SyntaxError, ValueError):
                 continue  # Move to next choice if parsing fails
 
-    # Fallback if all choices and parsing attempts fail
-    return {"plot": "dummy_plot"}
+    raise ValueError("Failed to generate a valid chart configuration.")
