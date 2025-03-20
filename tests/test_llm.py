@@ -1,13 +1,10 @@
 # Python
 import unittest
-from unittest.mock import patch, MagicMock
-import json
-import ast
+from unittest.mock import patch
 
 # Visualization
 from app.backend.visualization.plot_context_selector import (
     format_plot_selection_instructions,
-    NO_COMPATIBLE_PLOTS_MESSAGE,
     build_visualization_context,
 )
 

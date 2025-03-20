@@ -2,9 +2,6 @@
 Contains the routes for the Flask application.
 """
 
-# Python
-import json
-
 # Flask
 from flask import render_template, request, jsonify, session
 
@@ -19,12 +16,7 @@ from app.backend.llm_engine import (
     generate_sql,
     generate_describe,
     MODEL_NAME,
-    create_chart_dictionary,
 )
-
-# Bokeh
-from bokeh.embed import json_item
-from bokeh.resources import CDN
 
 # Third-party
 import pandas as pd
@@ -32,11 +24,8 @@ import pandas as pd
 # Visualization
 from app.backend.visualization.plot_context_selector import (
     build_visualization_context,
-    NO_COMPATIBLE_PLOTS_MESSAGE,
 )
-from app.backend.llm_engine import create_chart_dictionary
-from app.backend.visualization.plot_fallback import generate_fallback_plot_config
-from app.backend.visualization.generator import get_plot_function
+from app.backend.visualization.generator import generate_plot_from_config
 
 
 @flask_app.route("/", methods=["GET", "POST"])
@@ -117,39 +106,6 @@ def generate_plots():
     llm_context = build_visualization_context(execution)
 
     return generate_plot_from_config(execution, llm_context, df)
-
-
-def generate_plot_from_config(
-    execution: dict, llm_context: dict, df: pd.DataFrame
-) -> str:
-    """
-    Generate the plot configuration and return the chart JSON.
-    If an error occurs during the configuration or plot generation,
-    returns a JSON error response.
-    """
-
-    try:
-        # First try LLM-generated config
-        plot_config = create_chart_dictionary(llm_context)
-    except Exception:
-
-        try:
-            # Fallback to automated config
-            plot_config = generate_fallback_plot_config(execution, llm_context)
-        except ValueError as ve:
-            if str(ve) == NO_COMPATIBLE_PLOTS_MESSAGE:
-                return jsonify({"compatible_plots_error": NO_COMPATIBLE_PLOTS_MESSAGE})
-            else:
-                return jsonify({"error": str(ve)})
-
-    # Inject the DataFrame into arguments
-    plot_config["arguments"]["data"] = df
-
-    try:
-        plot = get_plot_function(plot_config)
-        return json.dumps(json_item(plot, "chart"))
-    except Exception as e:
-        return jsonify({"error": str(e)})
 
 
 @flask_app.route("/generate_tooltip")

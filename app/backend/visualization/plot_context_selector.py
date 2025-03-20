@@ -19,8 +19,7 @@ from app.backend.visualization.plot_filter import filter_compatible_plots
 from app.backend.visualization.plot_details_extractor import (
     retrieve_plot_function_details,
 )
-
-NO_COMPATIBLE_PLOTS_MESSAGE = "No compatible plots found for the given data."
+from app.backend.visualization.consts import NO_COMPATIBLE_PLOTS_MESSAGE
 
 
 def build_visualization_context(execution_result: dict) -> dict:

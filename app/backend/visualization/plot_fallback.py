@@ -2,9 +2,7 @@
 import pandas as pd
 
 # Visualization
-from app.backend.visualization.plot_context_selector import (
-    NO_COMPATIBLE_PLOTS_MESSAGE,
-)
+from app.backend.visualization.consts import NO_COMPATIBLE_PLOTS_MESSAGE
 
 
 def generate_fallback_plot_config(execution_result: dict, llm_context: dict) -> dict:

@@ -14,8 +14,9 @@ and then runs it.
 """
 
 # Python
-import re
 import inspect
+import json
+import re
 
 # Third-party
 import pandas as pd
@@ -36,6 +37,20 @@ from app.backend.visualization.plots import (
 
 # Bokeh
 from bokeh.plotting import figure
+from bokeh.embed import json_item
+
+# LLM
+from app.backend.llm_engine import (
+    create_chart_dictionary,
+)
+
+# Visualization
+from app.backend.visualization.consts import NO_COMPATIBLE_PLOTS_MESSAGE
+from app.backend.llm_engine import create_chart_dictionary
+from app.backend.visualization.plot_fallback import generate_fallback_plot_config
+
+# Flask
+from flask import jsonify
 
 plots_list = [
     name
@@ -123,3 +138,36 @@ def validate_plot_function_names(plot_functions: list[str]):
             f"missing_in_module:    {diff['missing_in_module']}\n"
             f"unexpected_in_module: {diff['unexpected_in_module']}"
         )
+
+
+def generate_plot_from_config(
+    execution: dict, llm_context: dict, df: pd.DataFrame
+) -> str:
+    """
+    Generate the plot configuration and return the chart JSON.
+    If an error occurs during the configuration or plot generation,
+    returns a JSON error response.
+    """
+
+    try:
+        # First try LLM-generated config
+        plot_config = create_chart_dictionary(llm_context)
+    except Exception:
+
+        try:
+            # Fallback to automated config
+            plot_config = generate_fallback_plot_config(execution, llm_context)
+        except ValueError as ve:
+            if str(ve) == NO_COMPATIBLE_PLOTS_MESSAGE:
+                return jsonify({"compatible_plots_error": NO_COMPATIBLE_PLOTS_MESSAGE})
+            else:
+                return jsonify({"error": str(ve)})
+
+    # Inject the DataFrame into arguments
+    plot_config["arguments"]["data"] = df
+
+    try:
+        plot = get_plot_function(plot_config)
+        return json.dumps(json_item(plot, "chart"))
+    except Exception as e:
+        return jsonify({"error": str(e)})
