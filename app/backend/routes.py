@@ -2,6 +2,9 @@
 Contains the routes for the Flask application.
 """
 
+# Python
+import json
+
 # Flask
 from flask import render_template, request, jsonify, session
 
@@ -19,15 +22,21 @@ from app.backend.llm_engine import (
     create_chart_dictionary,
 )
 
+# Bokeh
+from bokeh.embed import json_item
+from bokeh.resources import CDN
+
+# Third-party
+import pandas as pd
+
 # Visualization
 from app.backend.visualization.plot_context_selector import (
     build_visualization_context,
     NO_COMPATIBLE_PLOTS_MESSAGE,
 )
 from app.backend.llm_engine import create_chart_dictionary
-
-# Third-party
-import pandas as pd
+from app.backend.visualization.plot_fallback import generate_fallback_plot_config
+from app.backend.visualization.generator import get_plot_function
 
 
 @flask_app.route("/", methods=["GET", "POST"])
@@ -97,15 +106,37 @@ def generate_plots():
     if not result or "execution" not in result or "data" not in result["execution"]:
         return jsonify({"error": "No data available for plotting"})
 
-    llm_context = build_visualization_context(result["execution"])
+    execution = result["execution"]
 
-    if llm_context == NO_COMPATIBLE_PLOTS_MESSAGE:
-        return jsonify({"error": NO_COMPATIBLE_PLOTS_MESSAGE})
+    # Recreate DataFrame from session data
+    try:
+        df = pd.DataFrame(execution["data"], columns=execution["columns"])
+    except KeyError as e:
+        return jsonify({"error": f"Missing data in session: {str(e)}"})
+
+    llm_context = build_visualization_context(execution)
 
     try:
-        plot_args = create_chart_dictionary(llm_context)
+        # First try LLM-generated config
+        plot_config = create_chart_dictionary(llm_context)
     except Exception as e:
-        pass
+        try:
+            # Fallback to automated config
+            plot_config = generate_fallback_plot_config(execution, llm_context)
+        except ValueError as ve:
+            if str(ve) == NO_COMPATIBLE_PLOTS_MESSAGE:
+                return jsonify({"compatible_plots_error": NO_COMPATIBLE_PLOTS_MESSAGE})
+            else:
+                return jsonify({"error": str(ve)})
+
+    # Inject the DataFrame into arguments
+    plot_config["arguments"]["data"] = df
+
+    try:
+        plot = get_plot_function(plot_config)
+        return json.dumps(json_item(plot, "chart"))
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
 @flask_app.route("/generate_tooltip")

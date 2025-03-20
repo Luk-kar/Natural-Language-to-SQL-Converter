@@ -2,6 +2,13 @@
 <html>
 <head>
     <title>NL2SQL MVP</title>
+    <!-- Bokeh resources -->
+    <link href="https://cdn.bokeh.org/bokeh/release/bokeh-3.4.3.min.css" rel="stylesheet">
+    <link href="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.4.3.min.css" rel="stylesheet">
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.4.3.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.4.3.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.4.3.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-api-3.4.3.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         .section { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
@@ -13,6 +20,28 @@
         .tab-link.active { border-bottom: 2px solid #007bff; color: #007bff; }
         .tab-pane { display: none; }
         .tab-pane.active { display: block; }
+        .bk-root { 
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        .alert-info {
+            color: #31708f;
+            background-color: #d9edf7;
+            border-color: #bce8f1;
+        }
+        .alert-danger {
+            color: #a94442;
+            background-color: #f2dede;
+            border-color: #ebccd1;
+        }
     </style>
 </head>
 <body>
@@ -72,7 +101,8 @@
                         {% endif %}
                     </div>
                     <div id="chart" class="tab-pane" data-loaded="false">
-                        Under construction
+                        <!-- Plot will be rendered here automatically by Bokeh -->
+                        <div id="chart-container"></div>
                     </div>
                 </div>
             {% else %}
@@ -118,18 +148,33 @@
                     // Handle analysis tab content loading
                     if (tabId === 'chart' && tabPane.getAttribute('data-loaded') === 'false') {
                         fetch('/generate_plots')
-                            .then(response => {
-                                if (!response.ok) throw new Error('Network error');
-                                return response.json();
-                            })
-                            .then(data => {
-                                tabPane.innerHTML = `Last Generated Plots:<br><pre>${data.plots}</pre>`;
+                        .then(response => {
+                            if (!response.ok) throw new Error('Network error');
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.compatible_plots_error) {
+                                tabPane.innerHTML = `<div class="alert alert-info">${data.compatible_plots_error}</div>`;
+                                return;
+                            }
+                            if (data.error) {
+                                tabPane.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                                return;
+                            }
+                            
+                            // Clear previous content
+                            tabPane.innerHTML = '<div id="chart-container"></div>';
+                            
+                            try {
+                                Bokeh.embed.embed_item(data, "chart-container");
                                 tabPane.setAttribute('data-loaded', 'true');
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                tabPane.innerHTML = 'Error loading Plots';
-                            });
+                            } catch (e) {
+                                tabPane.innerHTML = `Error rendering plot: ${e.message}`;
+                            }
+                        })
+                        .catch(error => {
+                            tabPane.innerHTML = `Error loading plot: ${error.message}`;
+                        });
                     }
                 }
             });

@@ -50,7 +50,7 @@ def plot_bar(
     title: str = "Bar Chart",
     width: int = 500,
     height: int = 300,
-) -> None:
+) -> figure:
     """
     Create a vertical bar chart from a DataFrame.
     Best for comparing values across categories
@@ -135,7 +135,7 @@ def plot_heatmap(
     title: str = "Heatmap Chart",
     width: int = 900,
     height: int = 400,
-) -> None:
+) -> figure:
     """
     Create a rectangular heatmap plot.
     Best for matrix-like data with two dimensions.
@@ -223,7 +223,7 @@ def plot_treemap(
     title: str = "Treemap Chart",
     width: int = 800,
     height: int = 450,
-) -> None:
+) -> figure:
     """
     Create a hierarchical treemap.
     Best for hierarchical part-to-whole relationships.
@@ -362,7 +362,7 @@ def plot_scatter(
     title: str = "Scatter Chart",
     width: int = 600,
     height: int = 300,
-) -> None:
+) -> figure:
     """
     Create a scatter plot.
     Best for correlation between two numerical variables.
@@ -493,7 +493,7 @@ def plot_ridge(
     to_include_only: list[str] = None,
     width: int = 900,
     title: str = "Ridge Chart",
-) -> None:
+) -> figure:
     """
     Create a ridge plot (joyplot) for numeric samples across categories.
     Best for comparing distributions across categories.
@@ -666,7 +666,7 @@ def plot_pie(
     value_column: str,
     title: str = "Pie Chart",
     height: int = 350,
-) -> None:
+) -> figure:
     """
     Create a pie chart from DataFrame columns.
     Best for proportional composition of categories.
@@ -722,7 +722,7 @@ def plot_donut(
     value_column: str,
     title: str = "Donut Chart",
     height: int = 500,
-) -> None:
+) -> figure:
     """
     Create a donut chart from DataFrame columns.
     Best for proportional data with emphasis.
@@ -811,7 +811,7 @@ def plot_box(
     title: str = "Box Chart",
     width: int = 600,
     height: int = 400,
-) -> None:
+) -> figure:
     """
     Create a box plot with whiskers from DataFrame columns.
     Best for distribution comparison with outliers.

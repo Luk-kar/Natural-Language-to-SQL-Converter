@@ -34,6 +34,9 @@ from app.backend.visualization.plots import (
     plot_box,
 )
 
+# Bokeh
+from bokeh.plotting import figure
+
 plots_list = [
     name
     for name, obj in inspect.getmembers(plots, inspect.isfunction)
@@ -41,7 +44,7 @@ plots_list = [
 ]
 
 
-def get_plot_function(config: dict):
+def get_plot_function(config: dict) -> figure:
     """
     Returns a plot based on the provided data and configuration.
 
