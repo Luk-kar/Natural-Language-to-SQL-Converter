@@ -9,7 +9,6 @@ from app.backend.llm_engine import (
 
 from app.backend.visualization.plot_details_extractor import (
     retrieve_plot_function_details,
-    PLOTS_PATH,
 )
 
 
