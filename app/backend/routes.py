@@ -110,7 +110,9 @@ def generate_plots():
         chart_generation_context
     )
 
-    return generate_plot_from_config(execution, prompt_generation_context, df)
+    return generate_plot_from_config(
+        execution, prompt_generation_context, chart_generation_context, df
+    )
 
 
 @flask_app.route("/generate_tooltip")

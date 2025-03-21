@@ -141,7 +141,10 @@ def validate_plot_function_names(plot_functions: list[str]):
 
 
 def generate_plot_from_config(
-    execution: dict, prompt_generation_context: dict, df: pd.DataFrame
+    execution: dict,
+    prompt_generation_context: str,
+    chart_generation_context: dict,
+    df: pd.DataFrame,
 ) -> str:
     """
     Generate the plot configuration and return the chart JSON.
@@ -163,7 +166,7 @@ def generate_plot_from_config(
         try:
             # Fallback to automated config
             plot_config = generate_fallback_plot_config(
-                execution, prompt_generation_context
+                execution, chart_generation_context
             )
 
         except ValueError as ve:

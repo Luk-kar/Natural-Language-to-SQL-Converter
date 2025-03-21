@@ -5,13 +5,15 @@ import pandas as pd
 from app.backend.visualization.consts import NO_COMPATIBLE_PLOTS_MESSAGE
 
 
-def generate_fallback_plot_config(execution_result: dict, llm_context: dict) -> dict:
+def generate_fallback_plot_config(
+    execution_result: dict, chart_generation_context: dict
+) -> dict:
     """
     Generate a fallback plot configuration based on dataset characteristics and compatible plots.
 
     Args:
         execution_result: Dictionary containing 'data' and 'columns' from SQL execution
-        llm_context: Visualization context from build_visualization_context()
+        chart_generation_context: Visualization context from build_visualization_context()
 
     Returns:
         dict: Plot configuration dictionary
@@ -206,12 +208,12 @@ def generate_fallback_plot_config(execution_result: dict, llm_context: dict) -> 
 
     df = create_dataframe_from_execution_result(execution_result)
 
-    columns = extract_columns(llm_context)
+    columns = extract_columns(chart_generation_context)
 
     categorical_cols = extract_categorical_columns(columns)
     numerical_cols = filter_numerical_columns(columns, categorical_cols)
 
-    compatible_plots = get_compatible_plots(llm_context)
+    compatible_plots = get_compatible_plots(chart_generation_context)
 
     # Predefined priority (most popular first)
     plot_priority = [

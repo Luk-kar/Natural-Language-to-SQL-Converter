@@ -7,8 +7,6 @@ from app.backend.llm_engine import (
     extract_sql,
 )
 
-from app.backend.visualization import plot_details_extractor
-
 from app.backend.visualization.plot_details_extractor import (
     retrieve_plot_function_details,
     PLOTS_PATH,
@@ -44,7 +42,8 @@ class TestExtractSQL(unittest.TestCase):
             extract_sql(input_text)
 
         self.assertIn(
-            "Generated SQL does not contain a SELECT statement", str(context.exception)
+            "Generated SQL does not contain a valid sql SELECT statement:",
+            str(context.exception),
         )
 
 

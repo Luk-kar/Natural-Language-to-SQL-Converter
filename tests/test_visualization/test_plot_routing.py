@@ -170,6 +170,8 @@ class TestVisualizationGeneration(unittest.TestCase):
             },
         }
 
+        self.chart_generation_context = "dummy_context"
+
         self.df = pd.DataFrame(
             self.sample_execution["data"], columns=self.sample_execution["columns"]
         )
@@ -189,7 +191,10 @@ class TestVisualizationGeneration(unittest.TestCase):
         }
 
         result = generate_plot_from_config(
-            self.sample_execution, self.valid_llm_context, self.df
+            self.sample_execution,
+            self.valid_llm_context,
+            self.chart_generation_context,
+            self.df,
         )
 
         # Verify Bokeh-compatible JSON output
@@ -199,14 +204,17 @@ class TestVisualizationGeneration(unittest.TestCase):
     @patch("app.backend.visualization.generator.create_chart_dictionary")
     @patch("app.backend.visualization.generator.generate_fallback_plot_config")
     def test_generate_plot_fallback(self, mock_fallback, mock_create):
-        mock_create.side_effect = Exception("LLM error")
         mock_fallback.return_value = {
             "plot_type": "bar",
             "arguments": {"category_column": "category", "value_column": "value"},
         }
+        mock_create.side_effect = Exception("LLM error")
 
         result = generate_plot_from_config(
-            self.sample_execution, self.valid_llm_context, self.df
+            self.sample_execution,
+            self.valid_llm_context,
+            self.chart_generation_context,
+            self.df,
         )
 
         self.assertIsInstance(json.loads(result), dict)
@@ -220,7 +228,10 @@ class TestVisualizationGeneration(unittest.TestCase):
         # Create application context
         with self.app.app_context():
             result = generate_plot_from_config(
-                self.sample_execution, self.valid_llm_context, self.df
+                self.sample_execution,
+                self.valid_llm_context,
+                self.chart_generation_context,
+                self.df,
             )
 
         response = json.loads(result.get_data(as_text=True))
