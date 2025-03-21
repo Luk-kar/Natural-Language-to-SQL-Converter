@@ -14,7 +14,7 @@ to the plot’s arguments.
 import pandas as pd
 
 # Visualization
-from app.backend.visualization.generator import plots_list
+from app.backend.visualization.generator import PLOT_LIST
 from app.backend.visualization.plot_filter import filter_compatible_plots
 from app.backend.visualization.plot_details_extractor import (
     retrieve_plot_function_details,
@@ -105,6 +105,6 @@ def filter_plots_for_dataset(execution_result: dict) -> list[dict]:
 
     try:
         df = pd.DataFrame(execution_result["data"], columns=execution_result["columns"])
-        return filter_compatible_plots(plots_list, df)
+        return filter_compatible_plots(PLOT_LIST, df)
     except Exception as e:
         return []

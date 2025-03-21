@@ -52,7 +52,7 @@ from app.backend.visualization.plot_fallback import generate_fallback_plot_confi
 # Flask
 from flask import jsonify
 
-plots_list = [
+PLOT_LIST = [
     name
     for name, obj in inspect.getmembers(plots, inspect.isfunction)
     if re.match(r"plot_.+", name)
@@ -126,7 +126,7 @@ def validate_plot_function_names(plot_functions: list[str]):
     """
 
     expected_keys = set(plot_functions)
-    actual_keys = set(plots_list)
+    actual_keys = set(PLOT_LIST)
 
     if expected_keys != actual_keys:
         diff = {
