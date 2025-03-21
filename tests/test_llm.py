@@ -4,8 +4,10 @@ from unittest.mock import patch
 
 # Visualization
 from app.backend.visualization.plot_context_selector import (
-    format_plot_selection_instructions,
     build_visualization_context,
+)
+from app.backend.visualization.plot_instruction_prompt_formatter import (
+    format_plot_selection_instructions,
 )
 
 # LLM
@@ -46,9 +48,6 @@ class TestGenerateSQLLive(unittest.TestCase):
         )
         self.assertTrue(sql.strip().endswith(";"), "SQL should end with a semicolon")
 
-        # Optionally, print the generated SQL for manual inspection.
-        print("Generated SQL:", sql)
-
 
 class TestGenerateDescribe(unittest.TestCase):
     """
@@ -83,7 +82,6 @@ class TestGenerateDescribe(unittest.TestCase):
         self.assertNotIn(
             "SELECT", description.upper(), "Description should not include SQL code"
         )
-        print("Generated Description:", description)
 
     def test_generate_describe_negative_empty_schema(self):
         # When schema is empty, the function should raise a ValueError.

@@ -134,10 +134,6 @@ def create_chart_dictionary(prompt: str) -> dict:
         stop=["</s>"],
     )
 
-    print("=====================")
-    print("LLM response:")
-    print(response)
-
     code_block_pattern = re.compile(r"```.*?\n(.*?)```", re.DOTALL)
 
     for choice in response.get("choices", []):
@@ -190,7 +186,5 @@ def create_chart_dictionary(prompt: str) -> dict:
     error_message = "Failed to generate a valid chart configuration."
     if response:
         error_message += f"\nResponse:\n{str(response)}"
-
-    print(error_message)
 
     raise ValueError(error_message)

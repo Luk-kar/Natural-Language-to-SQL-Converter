@@ -156,11 +156,6 @@ def generate_plot_from_config(
         # First try LLM-generated config
         plot_config = create_chart_dictionary(prompt_generation_context)
 
-        print("=====================")
-        print("Plot config:")
-        print(plot_config)
-        print("=====================")
-
     except Exception:
 
         try:

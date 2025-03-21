@@ -24,9 +24,11 @@ import pandas as pd
 # Visualization
 from app.backend.visualization.plot_context_selector import (
     build_visualization_context,
-    format_plot_selection_instructions,
 )
 from app.backend.visualization.generator import generate_plot_from_config
+from app.backend.visualization.plot_instruction_prompt_formatter import (
+    format_plot_selection_instructions,
+)
 
 
 @flask_app.route("/", methods=["GET", "POST"])

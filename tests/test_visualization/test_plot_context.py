@@ -16,6 +16,8 @@ from unittest.mock import patch
 # Visualization
 from app.backend.visualization.plot_context_selector import (
     build_visualization_context,
+)
+from app.backend.visualization.plot_instruction_prompt_formatter import (
     format_plot_selection_instructions,
 )
 
