@@ -24,6 +24,7 @@ import pandas as pd
 # Visualization
 from app.backend.visualization.plot_context_selector import (
     build_visualization_context,
+    format_plot_selection_instructions,
 )
 from app.backend.visualization.generator import generate_plot_from_config
 
@@ -103,9 +104,13 @@ def generate_plots():
     except KeyError as e:
         return jsonify({"error": f"Missing data in session: {str(e)}"})
 
-    llm_context = build_visualization_context(execution)
+    chart_generation_context = build_visualization_context(execution)
 
-    return generate_plot_from_config(execution, llm_context, df)
+    prompt_generation_context = format_plot_selection_instructions(
+        chart_generation_context
+    )
+
+    return generate_plot_from_config(execution, prompt_generation_context, df)
 
 
 @flask_app.route("/generate_tooltip")

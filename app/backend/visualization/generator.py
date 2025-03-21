@@ -141,7 +141,7 @@ def validate_plot_function_names(plot_functions: list[str]):
 
 
 def generate_plot_from_config(
-    execution: dict, llm_context: dict, df: pd.DataFrame
+    execution: dict, prompt_generation_context: dict, df: pd.DataFrame
 ) -> str:
     """
     Generate the plot configuration and return the chart JSON.
@@ -151,13 +151,23 @@ def generate_plot_from_config(
 
     try:
         # First try LLM-generated config
-        plot_config = create_chart_dictionary(llm_context)
+        plot_config = create_chart_dictionary(prompt_generation_context)
+
+        print("=====================")
+        print("Plot config:")
+        print(plot_config)
+        print("=====================")
+
     except Exception:
 
         try:
             # Fallback to automated config
-            plot_config = generate_fallback_plot_config(execution, llm_context)
+            plot_config = generate_fallback_plot_config(
+                execution, prompt_generation_context
+            )
+
         except ValueError as ve:
+
             if str(ve) == NO_COMPATIBLE_PLOTS_MESSAGE:
                 return jsonify({"compatible_plots_error": NO_COMPATIBLE_PLOTS_MESSAGE})
             else:

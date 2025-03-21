@@ -31,7 +31,7 @@ def initialize_llm():
     """Initialize and return the LLM model."""
     return Llama(
         model_path=MODEL_PATH,
-        n_ctx=1024,  # Context window size (adjust as needed)
+        n_ctx=2048,  # Context window size (adjust as needed)
         # n_threads=4,  # Number of CPU threads
     )
 
@@ -82,7 +82,8 @@ def extract_sql(response_text: str) -> str:
         return match.group(0).strip()
     else:
         raise ValueError(
-            "Generated SQL does not contain a SELECT statement:\n" + response_text
+            "Generated SQL does not contain a valid sql SELECT statement:\n"
+            + response_text
         )
 
 
@@ -110,7 +111,6 @@ def generate_describe(schema: str, question: str) -> str:
         )
     response = LLM.create_completion(
         prompt=prompt,
-        max_tokens=256,
         temperature=0.7,
         stop=["</s>"],
     )
@@ -125,11 +125,18 @@ def create_chart_dictionary(prompt: str) -> dict:
     Falls back to a dummy plot if all parsing attempts fail.
     """
 
+    if not isinstance(prompt, str) or not prompt:
+        raise ValueError("Prompt must be a non-empty string:\n" + str(prompt))
+
     response = LLM.create_completion(
         prompt=prompt,
         temperature=0.7,
         stop=["</s>"],
     )
+
+    print("=====================")
+    print("LLM response:")
+    print(response)
 
     code_block_pattern = re.compile(r"```.*?\n(.*?)```", re.DOTALL)
 
@@ -180,4 +187,10 @@ def create_chart_dictionary(prompt: str) -> dict:
             except (SyntaxError, ValueError):
                 continue  # Move to next choice if parsing fails
 
-    raise ValueError("Failed to generate a valid chart configuration.")
+    error_message = "Failed to generate a valid chart configuration."
+    if response:
+        error_message += f"\nResponse:\n{str(response)}"
+
+    print(error_message)
+
+    raise ValueError(error_message)
