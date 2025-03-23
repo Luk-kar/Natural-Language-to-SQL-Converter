@@ -14,7 +14,7 @@ to the plot’s arguments.
 import pandas as pd
 
 # Visualization
-from app.backend.visualization.generator import PLOT_LIST
+from app.backend.visualization.plot_router import PLOT_LIST
 from app.backend.visualization.plot_filter import filter_compatible_plots
 from app.backend.visualization.plot_details_extractor import (
     retrieve_plot_function_details,

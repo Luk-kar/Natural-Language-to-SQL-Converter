@@ -14,7 +14,7 @@ are considered for visualization generation.
 import pandas as pd
 
 # Visualization
-from app.backend.visualization.generator import validate_plot_function_names
+from app.backend.visualization.plot_router import validate_plot_function_names
 
 
 def has_numeric_columns(df: pd.DataFrame, min_count: int = 1) -> bool:

@@ -18,8 +18,8 @@ from unittest.mock import patch, MagicMock
 from app.backend.visualization.plot_context_selector import (
     filter_plots_for_dataset,
 )
-from app.backend.visualization.generator import (
-    generate_plot_from_config,
+from app.backend.visualization.plot_router import (
+    generate_plot_json,
     create_chart_dictionary,
     generate_fallback_plot_config,
     NO_COMPATIBLE_PLOTS_MESSAGE,
@@ -183,14 +183,14 @@ class TestVisualizationGeneration(unittest.TestCase):
         LLM = None
 
     # Tests for generate_plot_from_config
-    @patch("app.backend.visualization.generator.create_chart_dictionary")
+    @patch("app.backend.visualization.plot_router.create_chart_dictionary")
     def test_generate_plot_success(self, mock_create):
         mock_create.return_value = {
             "plot_type": "bar",
             "arguments": {"category_column": "category", "value_column": "value"},
         }
 
-        result = generate_plot_from_config(
+        result = generate_plot_json(
             self.sample_execution,
             self.valid_llm_context,
             self.chart_generation_context,
@@ -201,8 +201,8 @@ class TestVisualizationGeneration(unittest.TestCase):
         self.assertIsInstance(json.loads(result), dict)
         self.assertIn("target_id", json.loads(result))
 
-    @patch("app.backend.visualization.generator.create_chart_dictionary")
-    @patch("app.backend.visualization.generator.generate_fallback_plot_config")
+    @patch("app.backend.visualization.plot_router.create_chart_dictionary")
+    @patch("app.backend.visualization.plot_router.generate_fallback_plot_config")
     def test_generate_plot_fallback(self, mock_fallback, mock_create):
         mock_fallback.return_value = {
             "plot_type": "bar",
@@ -210,7 +210,7 @@ class TestVisualizationGeneration(unittest.TestCase):
         }
         mock_create.side_effect = Exception("LLM error")
 
-        result = generate_plot_from_config(
+        result = generate_plot_json(
             self.sample_execution,
             self.valid_llm_context,
             self.chart_generation_context,
@@ -219,15 +219,15 @@ class TestVisualizationGeneration(unittest.TestCase):
 
         self.assertIsInstance(json.loads(result), dict)
 
-    @patch("app.backend.visualization.generator.create_chart_dictionary")
-    @patch("app.backend.visualization.generator.generate_fallback_plot_config")
+    @patch("app.backend.visualization.plot_router.create_chart_dictionary")
+    @patch("app.backend.visualization.plot_router.generate_fallback_plot_config")
     def test_no_compatible_plots(self, mock_fallback, mock_create):
         mock_create.side_effect = Exception("LLM error")
         mock_fallback.side_effect = ValueError(NO_COMPATIBLE_PLOTS_MESSAGE)
 
         # Create application context
         with self.app.app_context():
-            result = generate_plot_from_config(
+            result = generate_plot_json(
                 self.sample_execution,
                 self.valid_llm_context,
                 self.chart_generation_context,

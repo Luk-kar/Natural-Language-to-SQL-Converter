@@ -140,7 +140,7 @@ def validate_plot_function_names(plot_functions: list[str]):
         )
 
 
-def generate_plot_from_config(
+def generate_plot_json(
     execution: dict,
     prompt_generation_context: str,
     chart_generation_context: dict,

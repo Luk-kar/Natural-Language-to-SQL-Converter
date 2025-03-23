@@ -17,7 +17,7 @@ import pandas as pd
 
 # Visualization
 from app.backend.visualization.plot_filter import filter_compatible_plots
-from app.backend.visualization.generator import validate_plot_function_names
+from app.backend.visualization.plot_router import validate_plot_function_names
 from app.backend.visualization.plots import (
     plot_bar,
     plot_heatmap,

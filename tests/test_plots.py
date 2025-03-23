@@ -21,7 +21,7 @@ from app.backend.visualization.plots import (
     plot_donut,
     plot_box,
 )
-from app.backend.visualization.generator import get_plot_function
+from app.backend.visualization.plot_router import get_plot_function
 
 VALID_CONFIGS = {
     "bar": {

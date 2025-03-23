@@ -18,16 +18,9 @@ from app.backend.llm_engine import (
     MODEL_NAME,
 )
 
-# Third-party
-import pandas as pd
-
 # Visualization
-from app.backend.visualization.plot_context_selector import (
-    build_visualization_context,
-)
-from app.backend.visualization.generator import generate_plot_from_config
-from app.backend.visualization.plot_instruction_prompt_formatter import (
-    format_plot_selection_instructions,
+from app.backend.visualization.plot_artifact_generator import (
+    generate_visualization_artifacts,
 )
 
 
@@ -95,26 +88,12 @@ def generate_plots():
     Generate a plot based on the previously executed SQL query result.
     """
     result = session.get("result")
-    if not result or "execution" not in result or "data" not in result["execution"]:
-        return jsonify({"error": "No data available for plotting"})
-
     execution = result["execution"]
 
-    # Recreate DataFrame from session data
-    try:
-        df = pd.DataFrame(execution["data"], columns=execution["columns"])
-    except KeyError as e:
-        return jsonify({"error": f"Missing data in session: {str(e)}"})
+    if not result or "execution" not in result or "data" not in execution:
+        return jsonify({"error": "No data available for plotting"})
 
-    chart_generation_context = build_visualization_context(execution)
-
-    prompt_generation_context = format_plot_selection_instructions(
-        chart_generation_context
-    )
-
-    return generate_plot_from_config(
-        execution, prompt_generation_context, chart_generation_context, df
-    )
+    return generate_visualization_artifacts(execution)
 
 
 @flask_app.route("/generate_tooltip")
