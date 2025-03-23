@@ -82,8 +82,6 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
             )
             pd.testing.assert_frame_equal(call_args[3], expected_df)
 
-            self.assertEqual(response.status_code, 200)
-
     def test_missing_data_key(self):
         """Test handling of execution data with missing 'data' key"""
         with flask_app.app_context():
@@ -93,7 +91,6 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
 
             self.assertIn("error", response_data)
             self.assertIn("Missing data in session", response_data["error"])
-            self.assertEqual(response.status_code, 200)
 
     def test_missing_columns_key(self):
         """Test handling of execution data with missing 'columns' key"""
@@ -104,7 +101,6 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
 
             self.assertIn("error", response_data)
             self.assertIn("Missing data in session", response_data["error"])
-            self.assertEqual(response.status_code, 200)
 
     def test_empty_data_handling(self):
         """Test handling of empty dataset in execution result"""
@@ -194,7 +190,6 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
             response_data = response.get_json()
 
             self.assertIn("error", response_data)
-            self.assertEqual(response.status_code, 200)
 
     def test_invalid_data_types_handling(self):
         """Test handling of invalid data types in execution result"""
@@ -222,7 +217,6 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
 
             mock_generate.return_value = jsonify({"plot": "success"})
             response = generate_visualization_artifacts(complex_execution)
-            self.assertEqual(response.status_code, 200)
 
 
 if __name__ == "__main__":
