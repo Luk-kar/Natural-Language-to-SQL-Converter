@@ -9,7 +9,7 @@ This module validates the end-to-end process of transforming raw execution resul
 - HTTP status code correctness across success and error scenarios
 - Graceful degradation for edge cases (empty datasets, type mismatches)
 
-Tests ensure robust handling of both nominal workflows and exceptional conditions while maintaining response standards.
+Tests ensure robust handling of both nominal workflows and exceptional conditions.
 """
 
 # Python
@@ -76,7 +76,7 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
             mock_generate.return_value = jsonify({"plot": "plot_web_json"})
 
             # Execute
-            response = generate_visualization_artifacts(self.valid_execution)
+            generate_visualization_artifacts(self.valid_execution)
 
             # Verify
             mock_build.assert_called_once_with(self.valid_execution)
