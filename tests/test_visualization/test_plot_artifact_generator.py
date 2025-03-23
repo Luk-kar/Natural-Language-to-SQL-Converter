@@ -1,18 +1,33 @@
+"""
+Tests for visualization artifact generation pipeline validation.
+
+This module validates the end-to-end process of transforming raw execution results into visualization artifacts, including:
+- Input validation for mandatory data/columns presence
+- Error propagation through context building and plot generation stages
+- LLM fallback mechanisms when primary configuration fails
+- DataFrame integrity preservation during argument injection
+- HTTP status code correctness across success and error scenarios
+- Graceful degradation for edge cases (empty datasets, type mismatches)
+
+Tests ensure robust handling of both nominal workflows and exceptional conditions while maintaining response standards.
+"""
+
+# Python
 import unittest
 from unittest.mock import patch, MagicMock
+
+# Third-party
 import pandas as pd
 from flask import Flask, jsonify
-import json
 
 # Create a test Flask app
 flask_app = Flask(__name__)
 
-# Import the function to test AFTER app creation
+# Visualization
 with flask_app.app_context():
     from app.backend.visualization.plot_artifact_generator import (
         generate_visualization_artifacts,
     )
-
 from app.backend.visualization.consts import NO_COMPATIBLE_PLOTS_MESSAGE
 
 
