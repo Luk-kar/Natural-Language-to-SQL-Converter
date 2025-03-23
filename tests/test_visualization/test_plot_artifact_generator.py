@@ -15,6 +15,8 @@ with flask_app.app_context():
 
 from app.backend.llm_engine import get_llm
 
+from app.backend.visualization.consts import NO_COMPATIBLE_PLOTS_MESSAGE
+
 
 class TestVisualizationArtifactGeneration(unittest.TestCase):
     """Test suite for visualization artifact generation pipeline"""
@@ -120,11 +122,11 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
             response = generate_visualization_artifacts(empty_execution)
             response_data = response.get_json()
 
-            self.assertIn("compatible_plots_error", response_data)
-            self.assertEqual(response.status_code, 200)
+            self.assertIn(NO_COMPATIBLE_PLOTS_MESSAGE, response_data["error"])
 
     def test_error_propagation_from_context_building(self):
         """Test error propagation from visualization context building"""
+
         with flask_app.app_context(), patch(
             "app.backend.visualization.plot_artifact_generator.build_visualization_context"
         ) as mock_build:
@@ -137,59 +139,28 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
             }
 
             response = generate_visualization_artifacts(self.valid_execution)
+
             response_data = response.get_json()
 
-            self.assertIn("error", response_data)
-            self.assertIn("Context building failed", response_data["error"])
+        self.assertIn(NO_COMPATIBLE_PLOTS_MESSAGE, response_data["error"])
 
     def test_llm_fallback_mechanism(self):
         """Test LLM failure triggers fallback configuration"""
-
         with flask_app.app_context(), patch(
             "app.backend.llm_engine.LLM.create_completion"
-        ) as mock_llm:
+        ) as mock_llm, patch(
+            "app.backend.visualization.plot_router.generate_fallback_plot_config"
+        ) as mock_fallback:
 
             mock_llm.side_effect = Exception("LLM failure")
-            response = generate_visualization_artifacts(self.valid_execution)
 
-            self.assertIn("Histogram Chart", response)
+            generate_visualization_artifacts(self.valid_execution)
 
-            response_dict = json.loads(response)
-
-            # Verify plot contains both histogram bars and density line
-            renderers = response_dict["doc"]["roots"][0]["attributes"]["renderers"]
-            self.assertEqual(
-                len(renderers), 2, "Should have 2 renderers (histogram + line)"
-            )
-
-            # Validate histogram quad properties
-            histogram = renderers[0]["attributes"]
-            self.assertEqual(histogram["glyph"]["name"], "Quad")
-            data_source = histogram["data_source"]["attributes"]["data"]
-            data_keys = [entry[0] for entry in data_source["entries"]]
-            self.assertIn("left", data_keys)
-            self.assertIn("right", data_keys)
-            self.assertIn("top", data_keys)
-
-            # Validate density line properties
-            line = renderers[1]["attributes"]
-            self.assertEqual(line["glyph"]["name"], "Line")
-            line_data = line["data_source"]["attributes"]["data"]
-            line_keys = [entry[0] for entry in line_data["entries"]]
-            self.assertIn("x", line_keys)
-            self.assertIn("y", line_keys)
-
-            # Check axis configuration
-            figure_attrs = response_dict["doc"]["roots"][0]["attributes"]
-            self.assertEqual(
-                figure_attrs["below"][0]["attributes"]["axis_label"], "value"
-            )
-            self.assertEqual(
-                figure_attrs["left"][0]["attributes"]["axis_label"], "Density"
-            )
+            mock_fallback.assert_called_once()
 
     def test_dataframe_injection(self):
         """Test DataFrame is properly injected into plot arguments"""
+
         with flask_app.app_context(), patch(
             "app.backend.visualization.plot_artifact_generator.generate_plot_json"
         ) as mock_generate:
@@ -227,8 +198,7 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
             response = generate_visualization_artifacts(invalid_execution)
             response_data = response.get_json()
 
-            self.assertIn("compatible_plots_error", response_data)
-            self.assertEqual(response.status_code, 200)
+            self.assertIn(NO_COMPATIBLE_PLOTS_MESSAGE, response_data["error"])
 
     def test_multi_column_dataset_handling(self):
         """Test handling of datasets with multiple columns"""

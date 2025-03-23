@@ -10,7 +10,6 @@ Key Features:
 """
 
 # Visualization
-
 from app.backend.visualization.consts import NO_COMPATIBLE_PLOTS_MESSAGE
 
 
@@ -34,19 +33,12 @@ def format_plot_selection_instructions(plot_context: dict) -> str:
         ValueError: If the dataset context does not contain required keys.
     """
 
-    compatible_plots = plot_context.get("compatible_plots", [])
-    data_context = plot_context.get("data_context")
-
-    if not isinstance(data_context, dict):
-        raise ValueError("data_context must be a dictionary")
-
-    if not compatible_plots:
+    if len(plot_context["compatible_plots"]) == 0:
         return NO_COMPATIBLE_PLOTS_MESSAGE
 
-    required_data_keys = ["columns", "sample_3_values"]
-    for key in required_data_keys:
-        if key not in data_context:
-            raise ValueError(f"data_context must contain '{key}'")
+    validated_context = validate_plot_context(plot_context)
+    compatible_plots = validated_context["compatible_plots"]
+    data_context = validated_context["data_context"]
 
     # Build the Available Plots section
     plots_section = "## Available Plot Types\n\n"
@@ -107,3 +99,53 @@ def format_plot_selection_instructions(plot_context: dict) -> str:
     # Combine all sections
     full_context = f"{plots_section}\n{data_section}\n{instructions}"
     return full_context
+
+
+def validate_plot_context(plot_context: dict) -> dict:
+    """
+    Validate the structure and content of the plot context dictionary.
+    """
+    validation_rules = {
+        "compatible_plots": {
+            "condition": lambda x: "compatible_plots" in x
+            and len(x["compatible_plots"]) > 0,  # ✅ Check for non-empty list
+            "error_message": lambda x: (
+                "No compatible plots found for the given data.\n"
+                f"Received: {x.get('compatible_plots', 'Key missing')}" + str(type(x))
+            ),
+        },
+        "data_context_type": {
+            "condition": lambda x: isinstance(x.get("data_context"), dict),
+            "error_message": lambda x: (
+                "data_context must be a dictionary;\n"
+                f"Received:\n{x.get('data_context')}\n"
+                f"{type(x.get('data_context'))}"
+            ),
+        },
+        "data_context_not_empty": {
+            "condition": lambda x: bool(x.get("data_context")),
+            "error_message": lambda _: "data_context must not be empty",
+        },
+        "no_errors_in_context": {
+            "condition": lambda x: not x.get("error"),
+            "error_message": lambda x: f"Error in plot context:\n{x['error']}",
+        },
+        "required_data_keys": {
+            "condition": lambda x: all(
+                key in x.get("data_context", {})
+                for key in ["columns", "sample_3_values"]
+            ),
+            "error_message": lambda _: (
+                "data_context must contain 'columns' and 'sample_3_values'"
+            ),
+        },
+    }
+
+    # Go through each rule
+    # and raise an error if the condition is not met
+    for rule_name, rule in validation_rules.items():
+        if not rule["condition"](plot_context):
+            error_msg = rule["error_message"](plot_context)
+            raise ValueError(error_msg)
+
+    return plot_context

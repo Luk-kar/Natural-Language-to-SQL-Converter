@@ -384,7 +384,7 @@ class TestPlotFilterContext(unittest.TestCase):
         """Test that non-dict data_context raises error."""
 
         plot_context = {
-            "compatible_plots": [],
+            "compatible_plots": ["plot_box"],
             "data_context": "invalid",  # Should be dict
             "error": None,
         }

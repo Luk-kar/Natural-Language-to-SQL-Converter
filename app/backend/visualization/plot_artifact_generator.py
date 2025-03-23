@@ -28,6 +28,7 @@ from app.backend.visualization.plot_router import generate_plot_json
 from app.backend.visualization.plot_instruction_prompt_formatter import (
     format_plot_selection_instructions,
 )
+from app.backend.visualization.consts import NO_COMPATIBLE_PLOTS_MESSAGE
 
 # Flask
 from flask import jsonify
@@ -52,9 +53,12 @@ def generate_visualization_artifacts(execution: dict) -> jsonify:
 
     # Build visualization context layers
     chart_generation_context = build_visualization_context(execution)
+
     prompt_generation_context = format_plot_selection_instructions(
         chart_generation_context
     )
+    if prompt_generation_context == NO_COMPATIBLE_PLOTS_MESSAGE:
+        return jsonify({"error": NO_COMPATIBLE_PLOTS_MESSAGE})
 
     # Generate final plot configuration JSON
     return generate_plot_json(
