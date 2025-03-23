@@ -266,7 +266,15 @@ class TestChartDictionaryResponses(unittest.TestCase):
         plot_context = build_visualization_context(result["execution"])
         prompt = format_plot_selection_instructions(plot_context)
 
-        result = create_chart_dictionary(prompt)
+        try:
+            result = create_chart_dictionary(prompt)
+        except ValueError as e:
+
+            if "Failed to generate a valid chart configuration" in str(e):
+                self.fail(f"LLM returned incomplete response: {str(e)}")
+
+            else:
+                raise
 
         self.assertIsInstance(result, dict)
 

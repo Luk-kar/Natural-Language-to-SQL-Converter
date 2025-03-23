@@ -183,8 +183,8 @@ def create_chart_dictionary(prompt: str) -> dict:
             except (SyntaxError, ValueError):
                 continue  # Move to next choice if parsing fails
 
-    error_message = "Failed to generate a valid chart configuration."
+    error_message = "Failed to generate a valid chart configuration.\nResponse:\n"
     if response:
-        error_message += f"\nResponse:\n{str(response)}"
+        error_message += str(response)
 
     raise ValueError(error_message)
