@@ -13,18 +13,11 @@ with flask_app.app_context():
         generate_visualization_artifacts,
     )
 
-from app.backend.llm_engine import get_llm
-
 from app.backend.visualization.consts import NO_COMPATIBLE_PLOTS_MESSAGE
 
 
 class TestVisualizationArtifactGeneration(unittest.TestCase):
     """Test suite for visualization artifact generation pipeline"""
-
-    @classmethod
-    def setUpClass(cls):
-        """Ensure the LLM instance is initialized before running tests."""
-        get_llm()
 
     def setUp(self):
         """Create sample valid execution data"""
@@ -53,9 +46,19 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
         ) as mock_generate:
 
             # Setup mocks
-            mock_build.return_value = {"compatible_plots": [], "data_context": {}}
+            mock_build.return_value = {
+                "compatible_plots": ["plot_bar"],
+                "data_context": {
+                    "row_count": 3,
+                    "columns": {"category": "str", "value": "int"},
+                    "sample_3_values": {
+                        "category": ["A", "B", "C"],
+                        "value": [10, 20, 30],
+                    },
+                },
+            }
             mock_format.return_value = "formatted_instructions"
-            mock_generate.return_value = jsonify({"plot": "success"})
+            mock_generate.return_value = jsonify({"plot": "plot_web_json"})
 
             # Execute
             response = generate_visualization_artifacts(self.valid_execution)
@@ -146,13 +149,19 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
 
     def test_llm_fallback_mechanism(self):
         """Test LLM failure triggers fallback configuration"""
+
         with flask_app.app_context(), patch(
-            "app.backend.llm_engine.LLM.create_completion"
-        ) as mock_llm, patch(
+            "app.backend.llm_engine.LLM"
+        ) as mock_llm_class, patch(
             "app.backend.visualization.plot_router.generate_fallback_plot_config"
         ) as mock_fallback:
 
-            mock_llm.side_effect = Exception("LLM failure")
+            # Configure mock LLM instance
+            mock_llm_instance = MagicMock()
+            mock_llm_class.return_value = mock_llm_instance
+
+            # Set the side effect on the instance method
+            mock_llm_instance.create_completion.side_effect = Exception("LLM failure")
 
             generate_visualization_artifacts(self.valid_execution)
 
