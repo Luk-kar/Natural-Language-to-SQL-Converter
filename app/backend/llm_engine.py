@@ -75,9 +75,8 @@ def generate_sql(schema: str, question: str) -> str:
 
 
 def extract_sql(input_text: str) -> str:
-    """Extract SQL query from the generated text with security checks"""
+    """Extract SQL query from generated text with security checks and PostgreSQL formatting"""
 
-    # Security pattern to block unwanted SQL operations
     ILLEGAL_SQL_PATTERN = re.compile(
         r"\b(INSERT\s+INTO|UPDATE\s+|DELETE\s+FROM|"
         r"CREATE|DROP|ALTER|TRUNCATE|GRANT|REVOKE|"
@@ -86,12 +85,17 @@ def extract_sql(input_text: str) -> str:
     )
 
     try:
-        # Cleaning steps remain unchanged
+        # Initial cleaning
         cleaned_text = re.sub(r"/\*.*?\*/", " ", input_text, flags=re.DOTALL)
         cleaned_text = re.sub(r"--.*$", " ", cleaned_text, flags=re.MULTILINE)
+
+        # Remove one or more backtciks from trailint and start of the string
+        cleaned_text = re.sub(r"(^`+)|(`+$)", "", cleaned_text)
+
+        # Final whitespace cleanup
         cleaned_whitespace = re.sub(r"\s+", " ", cleaned_text).strip()
 
-        # CTE pattern matching remains unchanged
+        # CTE pattern matching
         cte_match = re.compile(
             r"(?i)(?:(WITH\s+.*?\bSELECT\b)|\bSELECT\b).*", re.DOTALL
         ).search(cleaned_whitespace)
@@ -101,7 +105,7 @@ def extract_sql(input_text: str) -> str:
 
         extracted_sql = cte_match.group(0).strip()
 
-        # Define patterns properly scoped
+        # Pattern processing
         patterns = [
             ("semicolon", re.compile(r"^(.*?)(;|\Z)", re.DOTALL)),
             (
@@ -114,27 +118,31 @@ def extract_sql(input_text: str) -> str:
             ),
         ]
 
-        # Process patterns with proper match handling
         for pattern_name, pattern in patterns:
             if match := pattern.match(extracted_sql):
                 sql_candidate = match.group(1).strip()
 
-                # Handle semicolon pattern
                 if pattern_name == "semicolon":
                     final_sql = f"{sql_candidate}{match.group(2)}".rstrip()
-                    if not final_sql.endswith(";"):
-                        final_sql += ";"
-
-                # Handle termination pattern
+                    final_sql = (
+                        final_sql if final_sql.endswith(";") else f"{final_sql};"
+                    )
                 elif pattern_name == "termination":
-                    final_sql = sql_candidate
-                    if not final_sql.endswith(";"):
-                        final_sql += ";"
+                    final_sql = f"{sql_candidate};"
 
-                # Security validation
+                # Final validation
                 if ILLEGAL_SQL_PATTERN.search(final_sql):
+                    raise ValueError(f"Blocked dangerous SQL: {final_sql}")
+
+                if final_sql.endswith("`") or final_sql.startswith("`"):
                     raise ValueError(
-                        f"Blocked potentially dangerous SQL operation: {final_sql}"
+                        f"Invalid backticks at front or end of SQL:\n{final_sql}"
+                    )
+
+                    # To avoid issues with backticks outside of quotes
+                if has_unquoted_backtick(final_sql):
+                    raise ValueError(
+                        f"Invalid backticks in the final_sql:\n{final_sql}"
                     )
 
                 return final_sql
@@ -143,12 +151,20 @@ def extract_sql(input_text: str) -> str:
 
     except Exception as e:
         error_context = f"""
-        SQL Extraction Failed: {str(e)}
+        SQL Extraction Failed:{str(e)}
         Original Input: {input_text}
-        Cleaned Text: {cleaned_whitespace}
-        Extracted SQL: {extracted_sql if 'extracted_sql' in locals() else 'N/A'}
+        Cleaned Text:   {cleaned_whitespace if 'cleaned_whitespace' in locals() else 'N/A'}
+        Extracted SQL:  {extracted_sql if 'extracted_sql' in locals() else 'N/A'}
         """
         raise ValueError(error_context) from e
+
+
+def has_unquoted_backtick(text: str) -> bool:
+    """Returns True if a backtick (`) exists outside of quotes, otherwise False."""
+
+    pattern = re.compile(r'"[^"]*"|\'[^\']*\'|`')
+
+    return any(m.group() == "`" for m in pattern.finditer(text))
 
 
 def generate_describe(schema: str, question: str) -> str:

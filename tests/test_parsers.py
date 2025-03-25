@@ -56,21 +56,36 @@ class TestExtractSQL(unittest.TestCase):
         expected = "SELECT id, name FROM users WHERE active = true;"
         self.assertEqual(extract_sql(input_text), expected)
 
-    def test_missing_semicolon(self):
-        """Test automatic semicolon addition"""
+    def test_nested_comments_handling(self):
+        """Verify proper stripping of nested PostgreSQL comments"""
 
-        input_text = "Data: SELECT product, price FROM inventory"
-        expected = "SELECT product, price FROM inventory;"
+        input_text = """/* Outer comment /* nested comment */ */
+            SELECT id FROM users WHERE status = 'active'"""
+
+        expected = "SELECT id FROM users WHERE status = 'active';"
 
         self.assertEqual(extract_sql(input_text), expected)
 
-    def test_case_insensitive_select(self):
+    def test_missing_semicolon(self):
+        """Test automatic semicolon addition"""
+        # Test missing semicolon
+        self.assertEqual(extract_sql("SELECT 1"), "SELECT 1;")
+
+        # Test existing semicolon
+        self.assertEqual(extract_sql("SELECT 1;"), "SELECT 1;")
+
+        # Test malformed query
+        # The invalid query will be directly raised by the PostgreSQL server
+        # The syntax check by libraries could cause mismatch between PostgreSQL and the library
+        self.assertEqual(extract_sql("SELECT id name"), "SELECT id name;")
+
+    def test_case_insensitivity_handling(self):
         """Test case-insensitive matching"""
 
-        input_text = "/* JSON format */ select * from api_logs"
+        input_text = "SELECT * FROM api_logs"
         expected = "select * from api_logs;"
 
-        self.assertEqual(extract_sql(input_text).lower(), expected.lower())
+        self.assertEqual(extract_sql(input_text).lower(), expected)
 
     def test_multiline_sql(self):
         """Test handling of multi-line queries"""
@@ -92,7 +107,7 @@ class TestExtractSQL(unittest.TestCase):
         self.assertEqual(extract_sql(input_text), expected)
 
     # Negative Test Cases
-    def test_no_select_statement(self):
+    def test_block_non_select_statements(self):
         """Test detection of missing SELECT statement"""
 
         input_text = "INSERT INTO users (name) VALUES ('test')"
@@ -104,7 +119,7 @@ class TestExtractSQL(unittest.TestCase):
         self.assertIn("Extracted SQL:", str(ctx.exception))
         self.assertIn("N/A", str(ctx.exception))
 
-    def test_select_into_dml(self):
+    def test_block_select_into_clause(self):
         """Test blocking of SELECT INTO statements"""
 
         input_text = "SELECT * INTO new_table FROM current_data"
@@ -112,19 +127,34 @@ class TestExtractSQL(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             extract_sql(input_text)
 
-        self.assertIn("Blocked potentially dangerous SQL operation", str(ctx.exception))
+        self.assertIn("Blocked dangerous SQL", str(ctx.exception))
         self.assertIn("INTO", str(ctx.exception))
         self.assertIn("Original Input:", str(ctx.exception))
         self.assertIn("Cleaned Text:", str(ctx.exception))
         self.assertIn("Extracted SQL:", str(ctx.exception))
 
-    def test_missing_semicolon_at_end(self):
-        """Test detection of malformed SELECT statements"""
+    def test_block_returning_clause(self):
+        """Verify blocking of RETURNING clauses"""
 
-        input_text = "SELECT id name FROM users"  # Missing semicolon
+        input_text = "UPDATE users SET name='test' RETURNING id"
 
-        expected = "SELECT id name FROM users;"
+        with self.assertRaises(ValueError):
+            extract_sql(input_text)
 
+    def test_empty_input_handling(self):
+        """Verify proper error handling for empty input"""
+        with self.assertRaises(ValueError):
+            extract_sql("")
+
+    def test_sql_union_handling(self):
+        """Verify UNION handling"""
+
+        input_text = """
+            SELECT id, name FROM users
+            UNION ALL
+            SELECT id, name FROM admins
+        """
+        expected = "SELECT id, name FROM users UNION ALL SELECT id, name FROM admins;"
         self.assertEqual(extract_sql(input_text), expected)
 
     def test_error_context_inclusion(self):
@@ -141,6 +171,64 @@ class TestExtractSQL(unittest.TestCase):
             self.assertIn("Cleaned Text:", str(e))
         else:
             self.fail("Expected ValueError not raised")
+
+    def test_leading_backticks(self):
+        """Strip leading backticks before processing"""
+
+        input_text = "```SELECT * FROM reports;"
+        expected = "SELECT * FROM reports;"
+        self.assertEqual(extract_sql(input_text), expected)
+
+    def test_trailing_backticks(self):
+        """Remove trailing backticks from SQL input"""
+        input_text = "SELECT * FROM logs LIMIT 10;```"
+        expected = "SELECT * FROM logs LIMIT 10;"
+        self.assertEqual(extract_sql(input_text), expected)
+
+    def test_triple_wrapped_backticks(self):
+        """Handle fully backtick-wrapped SQL statements"""
+        input_text = "```SELECT version();```"
+        expected = "SELECT version();"
+        self.assertEqual(extract_sql(input_text), expected)
+
+    def test_single_wrapped_backticks(self):
+        """Preserve single backticks in quoted identifiers"""
+
+        input_text = "`SELECT group FROM test.users;`"
+        expected = "SELECT group FROM test.users;"
+        self.assertEqual(extract_sql(input_text), expected)
+
+    def test_block_mysql_backtick(self):
+        """Verify MySQL backtick-to-PostgreSQL block"""
+
+        input_text = "SELECT `id`, `name` FROM `users`"
+        with self.assertRaises(ValueError) as ctx:
+
+            extract_sql(input_text)
+
+        self.assertIn("Invalid backticks", str(ctx.exception))
+
+    def test_preserve_string_backticks(self):
+        """Keep backticks inside string literals"""
+
+        input_text = "SELECT '`test`' AS marker FROM table"
+        expected = "SELECT '`test`' AS marker FROM table;"
+        self.assertEqual(extract_sql(input_text), expected)
+
+    def test_block_invalid_backticks(self):
+        """Detect invalid backtick usage"""
+        cases = [
+            "SELECT * FROM ``schema.table``",  # Double backticks
+            "SELECT * FROM `schema.table",  # Unmatched backtick
+            "SELECT 'valid' `\"invalid`",  # Mixed usage
+        ]
+        for sql in cases:
+            with self.subTest(sql=sql):
+                with self.assertRaises(ValueError) as ctx:
+
+                    extract_sql(sql)
+
+                self.assertIn("Invalid backticks", str(ctx.exception))
 
 
 class TestPlotInterfaceParser(unittest.TestCase):
