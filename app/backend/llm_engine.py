@@ -77,12 +77,26 @@ def generate_sql(schema: str, question: str) -> str:
 def extract_sql(input_text: str) -> str:
     """Extract SQL query from generated text with security checks and PostgreSQL formatting"""
 
-    ILLEGAL_SQL_PATTERN = re.compile(
-        r"\b(INSERT\s+INTO|UPDATE\s+|DELETE\s+FROM|"
-        r"CREATE|DROP|ALTER|TRUNCATE|GRANT|REVOKE|"
-        r"COMMIT|ROLLBACK|SAVEPOINT|WITH\s+RETURNING|INTO\s+)\b",
-        re.IGNORECASE,
-    )
+    ILLEGAL_PATTERNS = [
+        r"INSERT\s+INTO",
+        r"UPDATE\s+",
+        r"DELETE\s+FROM",
+        r"CREATE\s+",
+        r"DROP\s+",
+        r"ALTER\s+",
+        r"TRUNCATE\s+",
+        r"GRANT\s+",
+        r"REVOKE\s+",
+        r"COMMIT\s+",
+        r"ROLLBACK\s+",
+        r"SAVEPOINT\s+",
+        r"WITH\s+RETURNING",
+        r"INTO\s+",
+    ]
+
+    def remove_quoted_content(sql):
+        # Replace both single and double quoted strings with empty strings
+        return re.sub(r"""('[^']*'|"[^"]*")""", "", sql)
 
     try:
         # Initial cleaning
@@ -131,8 +145,15 @@ def extract_sql(input_text: str) -> str:
                     final_sql = f"{sql_candidate};"
 
                 # Final validation
-                if ILLEGAL_SQL_PATTERN.search(final_sql):
-                    raise ValueError(f"Blocked dangerous SQL: {final_sql}")
+                # Remove all quoted content for security check
+                unquoted_text = remove_quoted_content(final_sql)
+
+                # Check for illegal patterns in unquoted text
+                for pattern in ILLEGAL_PATTERNS:
+                    if re.search(pattern, unquoted_text, re.IGNORECASE):
+                        raise ValueError(
+                            f"Blocked SQL operation detected: {pattern.strip()}"
+                        )
 
                 if final_sql.endswith("`") or final_sql.startswith("`"):
                     raise ValueError(
