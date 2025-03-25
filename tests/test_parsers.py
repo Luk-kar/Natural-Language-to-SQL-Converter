@@ -14,36 +14,133 @@ from app.backend.visualization.plot_details_extractor import (
 
 class TestExtractSQL(unittest.TestCase):
     """
-    Test suite for validating SQL query extraction from natural language text.
-
-    This class tests both successful extraction of complete SELECT statements
-    and proper error handling when no valid SQL is detected.
+    Test suite for validating SQL query extraction with enhanced error handling,
+    CTE support, and comment stripping.
     """
 
-    def test_extract_sql_positive(self):
+    # Positive Test Cases
+    def test_basic_select(self):
+        """Test extraction of simple SELECT statement"""
+
+        input_text = "Result: SELECT id, name FROM users WHERE active = true;"
+        expected = "SELECT id, name FROM users WHERE active = true;"
+
+        self.assertEqual(extract_sql(input_text), expected)
+
+    def test_cte_select(self):
+        """Test extraction of SELECT with Common Table Expression"""
+
+        input_text = """Analysis:
+            WITH recent_orders AS (
+                SELECT * FROM orders WHERE order_date > '2023-01-01'
+            )
+            SELECT customer_id, COUNT(*) FROM recent_orders GROUP BY 1
         """
-        Positive test: valid SQL query embedded in some text
+        expected = (
+            "WITH recent_orders AS ( SELECT * FROM orders WHERE order_date > '2023-01-01' ) "
+            "SELECT customer_id, COUNT(*) FROM recent_orders GROUP BY 1;"
+        )
+        self.assertEqual(extract_sql(input_text), expected)
+
+    def test_comments_in_sql(self):
+        """Test stripping of PostgreSQL comments"""
+
+        input_text = """/* Get active users */
+            SELECT 
+                id, -- user ID
+                name /* full name */
+            FROM users
+            WHERE active = true
         """
 
-        input_text = "Here is the query:  SELECT * FROM my_table; and some extra text."
-        expected_output = "SELECT * FROM my_table;"
-        result = extract_sql(input_text)
-        self.assertEqual(result, expected_output)
+        expected = "SELECT id, name FROM users WHERE active = true;"
+        self.assertEqual(extract_sql(input_text), expected)
 
-    def test_extract_sql_negative(self):
+    def test_missing_semicolon(self):
+        """Test automatic semicolon addition"""
+
+        input_text = "Data: SELECT product, price FROM inventory"
+        expected = "SELECT product, price FROM inventory;"
+
+        self.assertEqual(extract_sql(input_text), expected)
+
+    def test_case_insensitive_select(self):
+        """Test case-insensitive matching"""
+
+        input_text = "/* JSON format */ select * from api_logs"
+        expected = "select * from api_logs;"
+
+        self.assertEqual(extract_sql(input_text).lower(), expected.lower())
+
+    def test_multiline_sql(self):
+        """Test handling of multi-line queries"""
+
+        input_text = """
+            SELECT id,
+                   name,
+                   email
+            FROM users
+            WHERE department = 'engineering'
+            ORDER BY name
         """
-        Negative test: no SELECT statement present in the input text
-        """
 
-        input_text = "This text does not contain a valid SQL query."
+        expected = (
+            "SELECT id, name, email FROM users WHERE department = 'engineering' "
+            "ORDER BY name;"
+        )
 
-        with self.assertRaises(ValueError) as context:
+        self.assertEqual(extract_sql(input_text), expected)
+
+    # Negative Test Cases
+    def test_no_select_statement(self):
+        """Test detection of missing SELECT statement"""
+
+        input_text = "INSERT INTO users (name) VALUES ('test')"
+        with self.assertRaises(ValueError) as ctx:
             extract_sql(input_text)
 
-        self.assertIn(
-            "Generated SQL does not contain a valid sql SELECT statement:",
-            str(context.exception),
-        )
+        self.assertIn("No valid SQL statement found", str(ctx.exception))
+        self.assertIn("Cleaned Text:", str(ctx.exception))
+        self.assertIn("Extracted SQL:", str(ctx.exception))
+        self.assertIn("N/A", str(ctx.exception))
+
+    def test_select_into_dml(self):
+        """Test blocking of SELECT INTO statements"""
+
+        input_text = "SELECT * INTO new_table FROM current_data"
+
+        with self.assertRaises(ValueError) as ctx:
+            extract_sql(input_text)
+
+        self.assertIn("Blocked potentially dangerous SQL operation", str(ctx.exception))
+        self.assertIn("INTO", str(ctx.exception))
+        self.assertIn("Original Input:", str(ctx.exception))
+        self.assertIn("Cleaned Text:", str(ctx.exception))
+        self.assertIn("Extracted SQL:", str(ctx.exception))
+
+    def test_missing_semicolon_at_end(self):
+        """Test detection of malformed SELECT statements"""
+
+        input_text = "SELECT id name FROM users"  # Missing semicolon
+
+        expected = "SELECT id name FROM users;"
+
+        self.assertEqual(extract_sql(input_text), expected)
+
+    def test_error_context_inclusion(self):
+        """Verify error context contains debugging information"""
+
+        input_text = "Find dad jokes."
+
+        try:
+            extract_sql(input_text)
+
+        except ValueError as e:
+            self.assertIn("SQL Extraction Failed:", str(e))
+            self.assertIn("Original Input:", str(e))
+            self.assertIn("Cleaned Text:", str(e))
+        else:
+            self.fail("Expected ValueError not raised")
 
 
 class TestPlotInterfaceParser(unittest.TestCase):

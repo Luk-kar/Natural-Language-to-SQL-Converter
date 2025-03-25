@@ -58,6 +58,7 @@ def generate_sql(schema: str, question: str) -> str:
             DO NOT ADD ANY COMMENTS OR DESCRIPTIONS!
             DO NOT USE TEMPORARY TABLES OR VIEWS!
             DO NOT USE ANY FUNCTIONS OR PROCEDURES!
+            YOU CAN USE CTEs (Common Table Expressions)!
             """
     )
 
@@ -73,18 +74,81 @@ def generate_sql(schema: str, question: str) -> str:
     return sql_query
 
 
-def extract_sql(response_text: str) -> str:
-    """Extract SQL query from the generated text"""
+def extract_sql(input_text: str) -> str:
+    """Extract SQL query from the generated text with security checks"""
 
-    match = re.search(r"(SELECT).+?;", response_text, re.IGNORECASE | re.DOTALL)
+    # Security pattern to block unwanted SQL operations
+    ILLEGAL_SQL_PATTERN = re.compile(
+        r"\b(INSERT\s+INTO|UPDATE\s+|DELETE\s+FROM|"
+        r"CREATE|DROP|ALTER|TRUNCATE|GRANT|REVOKE|"
+        r"COMMIT|ROLLBACK|SAVEPOINT|WITH\s+RETURNING|INTO\s+)\b",
+        re.IGNORECASE,
+    )
 
-    if match:
-        return match.group(0).strip()
-    else:
-        raise ValueError(
-            "Generated SQL does not contain a valid sql SELECT statement:\n"
-            + response_text
-        )
+    try:
+        # Cleaning steps remain unchanged
+        cleaned_text = re.sub(r"/\*.*?\*/", " ", input_text, flags=re.DOTALL)
+        cleaned_text = re.sub(r"--.*$", " ", cleaned_text, flags=re.MULTILINE)
+        cleaned_whitespace = re.sub(r"\s+", " ", cleaned_text).strip()
+
+        # CTE pattern matching remains unchanged
+        cte_match = re.compile(
+            r"(?i)(?:(WITH\s+.*?\bSELECT\b)|\bSELECT\b).*", re.DOTALL
+        ).search(cleaned_whitespace)
+
+        if not cte_match:
+            raise ValueError("No valid SQL statement found")
+
+        extracted_sql = cte_match.group(0).strip()
+
+        # Define patterns properly scoped
+        patterns = [
+            ("semicolon", re.compile(r"^(.*?)(;|\Z)", re.DOTALL)),
+            (
+                "termination",
+                re.compile(
+                    r"^(.*?)(?=\b(?:UNION\s+ALL|UNION|EXCEPT|INTERSECT|LIMIT|OFFSET|FETCH|FOR|"
+                    r"ORDER\s+BY|GROUP\s+BY|HAVING|WINDOW)\b)",
+                    re.DOTALL | re.IGNORECASE,
+                ),
+            ),
+        ]
+
+        # Process patterns with proper match handling
+        for pattern_name, pattern in patterns:
+            if match := pattern.match(extracted_sql):
+                sql_candidate = match.group(1).strip()
+
+                # Handle semicolon pattern
+                if pattern_name == "semicolon":
+                    final_sql = f"{sql_candidate}{match.group(2)}".rstrip()
+                    if not final_sql.endswith(";"):
+                        final_sql += ";"
+
+                # Handle termination pattern
+                elif pattern_name == "termination":
+                    final_sql = sql_candidate
+                    if not final_sql.endswith(";"):
+                        final_sql += ";"
+
+                # Security validation
+                if ILLEGAL_SQL_PATTERN.search(final_sql):
+                    raise ValueError(
+                        f"Blocked potentially dangerous SQL operation: {final_sql}"
+                    )
+
+                return final_sql
+
+        raise ValueError("No valid SELECT statement found")
+
+    except Exception as e:
+        error_context = f"""
+        SQL Extraction Failed: {str(e)}
+        Original Input: {input_text}
+        Cleaned Text: {cleaned_whitespace}
+        Extracted SQL: {extracted_sql if 'extracted_sql' in locals() else 'N/A'}
+        """
+        raise ValueError(error_context) from e
 
 
 def generate_describe(schema: str, question: str) -> str:

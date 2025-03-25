@@ -1,10 +1,14 @@
 services:
-  postgres_local:
+  postgres_nl2sql:
     container_name: ${DB_HOST}
     image: postgres:15
     build:
       context: ./services/postgres
       dockerfile: Dockerfile
+      args:
+        DB_USER_READONLY: ${DB_USER_READONLY}
+        DB_PASSWORD_READONLY: ${DB_PASSWORD_READONLY}
+        DB_NAME: ${DB_NAME}
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -13,14 +17,8 @@ services:
       DB_PASSWORD_READONLY: ${DB_PASSWORD_READONLY}
     ports:
       - "${DB_PORT}:${DB_PORT}"
-    entrypoint:
-      [
-        "/bin/bash",
-        "-c",
-        "/docker-entrypoint-initdb.d/init.sh && docker-entrypoint.sh postgres",
-      ]
 
-  backend_local:
+  backend_nl2sql:
     container_name: ${BACKEND_CONTAINER_NAME}
     build:
       context: .
@@ -38,7 +36,7 @@ services:
       DB_USER_READONLY: ${DB_USER_READONLY}
       DB_PASSWORD_READONLY: ${DB_PASSWORD_READONLY}
     depends_on:
-      - postgres_local
+      - postgres_nl2sql
     volumes:
       # Mount the model file from the host into the container
       - ./app/backend/models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf:/app/backend/models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf:ro
