@@ -7,7 +7,6 @@ PostgreSQL DQL compliance while blocking all other command types.
 
 # Python
 import re
-from typing import Tuple
 
 # Security Patterns
 ILLEGAL_OPERATION_PATTERNS = [
