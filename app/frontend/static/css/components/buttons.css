@@ -1,0 +1,13 @@
+/* Query buttons */
+.try-queries {
+    margin-top: 10px;
+}
+
+.try-queries button {
+    margin-right: 5px;
+    padding: 5px 10px;
+}
+
+button[type="submit"] {
+    margin-top: 10px;
+}

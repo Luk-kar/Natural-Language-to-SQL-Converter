@@ -6,46 +6,19 @@
     <link href="https://cdn.bokeh.org/bokeh/release/bokeh-3.4.3.min.css" rel="stylesheet">
     <link href="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.4.3.min.css" rel="stylesheet">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/alerts.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/buttons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/forms.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/sections.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/tables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/tabs.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/third-party/bokeh.css') }}">
     <!-- Bokeh JS -->
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.4.3.min.js"></script>
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.4.3.min.js"></script>
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.4.3.min.js"></script>
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-api-3.4.3.min.js"></script>
-    <!-- <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .section { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
-        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
-        .try-queries { margin-top: 10px; }
-        .try-queries button { margin-right: 5px; padding: 5px 10px; }
-        .navbar { margin: 20px 0; border-bottom: 1px solid #ddd; }
-        .tab-link { display: inline-block; padding: 10px 15px; cursor: pointer; text-decoration: none; color: #333; }
-        .tab-link.active { border-bottom: 2px solid #007bff; color: #007bff; }
-        .tab-pane { display: none; }
-        .tab-pane.active { display: block; }
-        .bk-root { 
-            margin: 20px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
-        }
-        .alert {
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 1px solid transparent;
-            border-radius: 4px;
-        }
-        .alert-info {
-            color: #31708f;
-            background-color: #d9edf7;
-            border-color: #bce8f1;
-        }
-        .alert-danger {
-            color: #a94442;
-            background-color: #f2dede;
-            border-color: #ebccd1;
-        }
-    </style> -->
 </head>
 <body>
     <h1>Natural Language to SQL Converter</h1>

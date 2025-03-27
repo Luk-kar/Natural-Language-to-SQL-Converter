@@ -1,0 +1,6 @@
+/* Form elements */
+input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    padding-right: 30px;
+}

@@ -1,0 +1,13 @@
+/* Section styling */
+.section {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+pre {
+    background: #f4f4f4;
+    padding: 10px;
+    overflow-x: auto;
+}

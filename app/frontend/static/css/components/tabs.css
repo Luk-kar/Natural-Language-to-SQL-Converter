@@ -1,0 +1,27 @@
+/* Navigation tabs */
+.navbar {
+    margin: 20px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab-link {
+    display: inline-block;
+    padding: 10px 15px;
+    cursor: pointer;
+    text-decoration: none;
+    color: #333;
+}
+
+.tab-link.active {
+    border-bottom: 2px solid #007bff;
+    color: #007bff;
+}
+
+/* Tab content */
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
