@@ -80,7 +80,7 @@ class TestIndexEndpoint(unittest.TestCase):
         self.assertIn(dummy_sql, html)
 
         # Verify that the table with query results appears.
-        self.assertIn('<table border="1">', html)
+        self.assertIn("<table>", html)
         self.assertIn("<th>id</th>", html)
         self.assertIn("<th>name</th>", html)
         self.assertIn("<td>1</td>", html)
