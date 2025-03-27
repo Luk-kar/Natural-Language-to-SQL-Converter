@@ -58,7 +58,6 @@ def generate_sql(schema: str, question: str) -> str:
             SQL Query:\n
             
             DO NOT ADD ANY OTHER CODE THAN THE DATA QUERY LANGUAGE (DQL)!
-            DO NOT ADD ANY COMMENTS OR DESCRIPTIONS!
             DO NOT USE TEMPORARY TABLES OR VIEWS!
             DO NOT USE ANY FUNCTIONS OR PROCEDURES!
             YOU CAN USE CTEs (Common Table Expressions)!
@@ -68,7 +67,7 @@ def generate_sql(schema: str, question: str) -> str:
     response = LLM.create_completion(
         prompt=prompt,
         temperature=0.7,
-        stop=["</s>"],  # Stop token (adjust based on model requirements)
+        # stop=["</s>"],  # Stop token (adjust based on model requirements)
     )
 
     generated_text = response["choices"][0]["text"]
@@ -93,16 +92,13 @@ def generate_describe(schema: str, question: str) -> str:
 
     Describe the structure of the database in a way that anyone can understand. 
     Focus on what kind of information is stored and how it is organized, without using technical terms. 
-    For example, explain what kinds of records exist and how they relate to each other. 
-    DO NOT USE ANY PROGRAMMING CODE OR SQL QUERIES!
-    BE CONCISE!
-    DO NOT START WITH: 'Answer:', 'Solution', '.etc'
+    For example, explain what kinds of records exist and how they relate to each other.
     """
         )
     response = LLM.create_completion(
         prompt=prompt,
         temperature=0.7,
-        stop=["</s>"],
+        # stop=["</s>"],
     )
     return response["choices"][0]["text"].strip()
 
