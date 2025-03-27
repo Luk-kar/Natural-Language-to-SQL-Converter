@@ -10,7 +10,10 @@ from flask import Flask
 
 # Configuration - Flask
 template_folder = os.path.join(os.path.dirname(__file__), "..", "frontend", "templates")
-flask_app = Flask(__name__, template_folder=template_folder)
+static_folder = os.path.join(os.path.dirname(__file__), "..", "frontend", "static")
+flask_app = Flask(
+    __name__, template_folder=template_folder, static_folder=static_folder
+)
 flask_app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24))  # Secret key
 
 MAX_ROWS_DISPLAY = 100
