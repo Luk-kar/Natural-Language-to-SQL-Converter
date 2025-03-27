@@ -12,7 +12,7 @@ SQL Query Handling & Security:
 
 import unittest
 
-from app.backend.llm_engine import extract_sql
+from app.backend.sql_parser import extract_sql
 
 
 class TestExtractSQL(unittest.TestCase):
@@ -187,7 +187,7 @@ class TestExtractSQL(unittest.TestCase):
 
             extract_sql(input_text)
 
-        self.assertIn("Invalid backticks", str(ctx.exception))
+        self.assertIn("Unquoted backticks", str(ctx.exception))
 
     def test_preserve_string_backticks(self):
         """Keep backticks inside string literals"""
@@ -209,7 +209,7 @@ class TestExtractSQL(unittest.TestCase):
 
                     extract_sql(sql)
 
-                self.assertIn("Invalid backticks", str(ctx.exception))
+                self.assertIn("Unquoted backticks", str(ctx.exception))
 
 
 # Security Pattern Tests

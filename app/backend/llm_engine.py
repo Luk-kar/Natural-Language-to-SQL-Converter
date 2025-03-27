@@ -11,6 +11,9 @@ import re
 # LLM
 from llama_cpp import Llama
 
+# Project
+from app.backend.sql_parser import extract_sql
+
 # Model Configuration
 # MODEL_NAME = "deepseek-coder-6.7b-instruct.Q4_K_M"
 MODEL_NAME = "ggml-model-Q4_K_M"
@@ -72,120 +75,6 @@ def generate_sql(schema: str, question: str) -> str:
     sql_query = extract_sql(generated_text)
 
     return sql_query
-
-
-def extract_sql(input_text: str) -> str:
-    """Extract SQL query from generated text with security checks and PostgreSQL formatting"""
-
-    ILLEGAL_PATTERNS = [
-        r"INSERT\s+INTO",
-        r"UPDATE\s+",
-        r"DELETE\s+FROM",
-        r"CREATE\s+",
-        r"DROP\s+",
-        r"ALTER\s+",
-        r"TRUNCATE\s+",
-        r"GRANT\s+",
-        r"REVOKE\s+",
-        r"COMMIT\s+",
-        r"ROLLBACK\s+",
-        r"SAVEPOINT\s+",
-        r"WITH\s+RETURNING",
-        r"INTO\s+",
-    ]
-
-    def remove_quoted_content(sql):
-        # Replace both single and double quoted strings with empty strings
-        return re.sub(r"""('[^']*'|"[^"]*")""", "", sql)
-
-    try:
-        # Initial cleaning
-        cleaned_text = re.sub(r"/\*.*?\*/", " ", input_text, flags=re.DOTALL)
-        cleaned_text = re.sub(r"--.*$", " ", cleaned_text, flags=re.MULTILINE)
-
-        # Remove one or more backtciks from trailint and start of the string
-        cleaned_text = re.sub(r"(^`+)|(`+$)", "", cleaned_text)
-
-        # Final whitespace cleanup
-        cleaned_whitespace = re.sub(r"\s+", " ", cleaned_text).strip()
-
-        # CTE pattern matching
-        cte_match = re.compile(
-            r"(?i)(?:(WITH\s+.*?\bSELECT\b)|\bSELECT\b).*", re.DOTALL
-        ).search(cleaned_whitespace)
-
-        if not cte_match:
-            raise ValueError("No valid SQL statement found")
-
-        extracted_sql = cte_match.group(0).strip()
-
-        # Pattern processing
-        patterns = [
-            ("semicolon", re.compile(r"^(.*?)(;|\Z)", re.DOTALL)),
-            (
-                "termination",
-                re.compile(
-                    r"^(.*?)(?=\b(?:UNION\s+ALL|UNION|EXCEPT|INTERSECT|LIMIT|OFFSET|FETCH|FOR|"
-                    r"ORDER\s+BY|GROUP\s+BY|HAVING|WINDOW)\b)",
-                    re.DOTALL | re.IGNORECASE,
-                ),
-            ),
-        ]
-
-        for pattern_name, pattern in patterns:
-            if match := pattern.match(extracted_sql):
-                sql_candidate = match.group(1).strip()
-
-                if pattern_name == "semicolon":
-                    final_sql = f"{sql_candidate}{match.group(2)}".rstrip()
-                    final_sql = (
-                        final_sql if final_sql.endswith(";") else f"{final_sql};"
-                    )
-                elif pattern_name == "termination":
-                    final_sql = f"{sql_candidate};"
-
-                # Final validation
-                # Remove all quoted content for security check
-                unquoted_text = remove_quoted_content(final_sql)
-
-                # Check for illegal patterns in unquoted text
-                for pattern in ILLEGAL_PATTERNS:
-                    if re.search(pattern, unquoted_text, re.IGNORECASE):
-                        raise ValueError(
-                            f"Blocked SQL operation detected: {pattern.strip()}"
-                        )
-
-                if final_sql.endswith("`") or final_sql.startswith("`"):
-                    raise ValueError(
-                        f"Invalid backticks at front or end of SQL:\n{final_sql}"
-                    )
-
-                    # To avoid issues with backticks outside of quotes
-                if has_unquoted_backtick(final_sql):
-                    raise ValueError(
-                        f"Invalid backticks in the final_sql:\n{final_sql}"
-                    )
-
-                return final_sql
-
-        raise ValueError("No valid SELECT statement found")
-
-    except Exception as e:
-        error_context = f"""
-        SQL Extraction Failed:{str(e)}
-        Original Input: {input_text}
-        Cleaned Text:   {cleaned_whitespace if 'cleaned_whitespace' in locals() else 'N/A'}
-        Extracted SQL:  {extracted_sql if 'extracted_sql' in locals() else 'N/A'}
-        """
-        raise ValueError(error_context) from e
-
-
-def has_unquoted_backtick(text: str) -> bool:
-    """Returns True if a backtick (`) exists outside of quotes, otherwise False."""
-
-    pattern = re.compile(r'"[^"]*"|\'[^\']*\'|`')
-
-    return any(m.group() == "`" for m in pattern.finditer(text))
 
 
 def generate_describe(schema: str, question: str) -> str:
