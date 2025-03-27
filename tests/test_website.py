@@ -1,3 +1,17 @@
+"""
+End-to-end validation of Flask web interface and user interaction flows.
+
+This module tests critical frontend components through:
+- Endpoint response validation
+- HTML template rendering checks
+- Form submission error handling
+- Backend service integration mocking
+- User-facing error message propagation
+
+Validates complete request/response cycles using Flask's test client while
+isolating external dependencies through patching of LLM and database systems.
+"""
+
 # Python
 import unittest
 from unittest.mock import patch
@@ -7,6 +21,23 @@ from app.app import flask_app
 
 
 class TestIndexEndpoint(unittest.TestCase):
+    """
+    Test suite for core index endpoint functionality and error handling.
+
+    Validates:
+    - SQL generation workflow from natural language questions
+    - Schema description request processing
+    - Error handling and user feedback mechanisms
+    - HTML template rendering of both results and errors
+    - Integration with mocked LLM and database services
+
+    Tests verify proper system behavior through:
+    - Response status code validation
+    - HTML content assertions
+    - Mocked backend service interactions
+    - Edge case simulations (exceptions, malformed inputs)
+    """
+
     def setUp(self):
         # Set up the Flask test client
         self.app = flask_app.test_client()

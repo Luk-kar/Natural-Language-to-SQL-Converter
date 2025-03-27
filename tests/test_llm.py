@@ -1,3 +1,19 @@
+"""
+End-to-end validation of LLM-powered analysis and visualization pipelines.
+
+This module tests core natural language processing capabilities including:
+- SQL generation from natural language questions
+- Schema description synthesis
+- Visualization configuration parsing
+- LLM response format handling
+
+Validates both live LLM interactions and mocked response parsing through:
+- Query structure verification
+- Error condition simulations
+- Cross-component integration
+- Data type and format compliance
+"""
+
 # Python
 import unittest
 from unittest.mock import patch
@@ -21,7 +37,15 @@ from app.backend.llm_engine import (
 
 class TestGenerateSQLLive(unittest.TestCase):
     """
-    Test the generate_sql function with a live LLM instance.
+    Validation suite for SQL query generation using live LLM.
+
+    Tests verify:
+    - Proper SQL syntax scaffolding (SELECT statements, semicolon termination)
+    - Schema context integration
+    - LLM instance lifecycle management
+    - Basic query validity checks
+
+    Uses simplified schema structures to isolate query generation logic.
     """
 
     @classmethod
@@ -51,7 +75,16 @@ class TestGenerateSQLLive(unittest.TestCase):
 
 class TestGenerateDescribe(unittest.TestCase):
     """
-    Test the generate_describe function with a live LLM instance.
+    Test suite for natural language schema description generation.
+
+    Validates:
+    - Descriptive text synthesis from table structures
+    - Empty schema handling and error propagation
+    - Output content validation (non-SQL, non-empty responses)
+    - Data type and comment incorporation
+
+    Ensures descriptions maintain analytical utility without exposing
+    raw database implementation details.
     """
 
     @classmethod
@@ -96,7 +129,17 @@ class TestGenerateDescribe(unittest.TestCase):
 
 class TestChartDictionaryResponses(unittest.TestCase):
     """
-    Test the create_chart_dictionary function with various LLM responses.
+    Validation of visualization configuration parsing.
+
+    Tests handle:
+    - JSON code block extraction from LLM responses
+    - Python dictionary syntax adaptation
+    - Malformed response error handling
+    - Schema/plot compatibility enforcement
+    - Cross-component context formatting (data <> visualization)
+
+    Includes both unit tests with mocked LLM responses and
+    integration tests with live model interactions (sparingly executed).
     """
 
     @classmethod

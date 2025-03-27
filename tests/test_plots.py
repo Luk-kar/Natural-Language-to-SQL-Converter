@@ -1,3 +1,19 @@
+"""
+Validation of visualization generation components.
+
+This module tests core plotting functionality and configuration routing through:
+- Bokeh figure generation for all supported chart types
+- Configuration preset validation
+- Plot type routing system
+- Error handling for invalid configurations
+
+Validates both individual plot implementations and system integration using:
+- Predefined configuration templates
+- DataFrame structure checks
+- Required parameter enforcement
+- Type safety guards
+"""
+
 # Python
 import unittest
 
@@ -116,11 +132,17 @@ VALID_CONFIGS = {
 
 class TestVisualizationPlotFunctions(unittest.TestCase):
     """
-    Test suite for validating the core visualization plot implementations.
+    Validation suite for core visualization plot implementations.
 
-    This class tests the successful generation of Bokeh figures for each plot type
-    using valid configuration presets, ensuring proper glyph creation and basic
-    plot structure validation.
+    Tests verify:
+    - Successful Bokeh figure generation for all supported chart types
+    - Proper glyph rendering and data mapping
+    - Configuration preset compatibility
+    - Basic plot structure validation (titles, axes, legends)
+    - DataFrame schema adherence
+
+    Uses standardized configuration templates to ensure consistent
+    testing across different visualization types.
     """
 
     def test_plot_bar(self):
@@ -156,13 +178,19 @@ class TestVisualizationPlotFunctions(unittest.TestCase):
 
 class TestPlotFunctionSelector(unittest.TestCase):
     """
-    Test suite for validating the plot function selection and execution system.
+    Test suite for plot configuration routing and validation system.
 
-    This class tests:
-    - Correct routing of configuration to appropriate plot functions
-    - Error handling for invalid plot types and configurations
-    - Data validation and type checking
-    - Argument validation and error messaging
+    Validates:
+    - Correct function mapping for all supported plot types
+    - Comprehensive error handling for:
+      - Invalid plot type specifications
+      - Missing or extraneous configuration parameters
+      - Incorrect data types and structures
+    - Type checking enforcement for DataFrame inputs
+    - Clear error messaging for debugging
+
+    Ensures the plot routing system acts as a robust gateway
+    between configuration inputs and visualization rendering.
     """
 
     def test_get_plot_function(self):

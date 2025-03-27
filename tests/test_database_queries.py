@@ -1,3 +1,15 @@
+"""
+Test suite for database interaction layer.
+
+Validates core database operations including:
+    - schema retrieval
+    - query execution
+with emphasis on:
+    - error handling
+    - security controls
+    - connection management
+"""
+
 # Python
 import unittest
 from unittest.mock import patch, MagicMock
@@ -51,6 +63,19 @@ def dummy_connect(*args, **kwargs):
 
 
 class SchemaRetrievalTests(unittest.TestCase):
+    """
+    Test suite for database schema retrieval functionality.
+
+    Validates:
+    - Successful schema extraction from PostgreSQL
+    - Markdown formatting of schema documentation
+    - Connection error handling and propagation
+    - Table/column metadata presentation
+    - Data type and comment inclusion
+
+    Tests use mocked database connections to verify behavior without
+    requiring live database instances.
+    """
 
     @patch("psycopg2.connect", side_effect=dummy_connect)
     def test_get_schema_success(self, mock_connect):
@@ -89,6 +114,19 @@ class SchemaRetrievalTests(unittest.TestCase):
 
 
 class TestExecuteQuery(unittest.TestCase):
+    """
+    Test suite for SQL query execution pipeline.
+
+    Covers both successful operations and error conditions:
+    - SELECT query result formatting
+    - Non-SELECT command blocking
+    - SQL syntax error handling
+    - Connection failure recovery
+    - Result serialization structure
+
+    Ensures security controls prevent write operations and
+    proper error context reaches calling code.
+    """
 
     @patch("psycopg2.connect")
     def test_execute_query_success(self, mock_connect):
