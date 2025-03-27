@@ -23,77 +23,7 @@
 <body>
     <h1>Natural Language to SQL Converter</h1>
 
-    <div class="section">
-        <form method="POST" style="position: relative;">
-            <h3>Ask a Question:</h3>
-            <div style="position: relative; display: flex; align-items: center;">
-                <input id="questionInput" type="text" name="question" placeholder="e.g. Show me all customers from New York">
-                <span style="position: absolute; right: 10px; font-size: 18px; pointer-events: none;">🔍</span>
-            </div>
-            <button type="submit">Get answer!</button>
-            <div class="try-queries">
-                <h3>Try these queries:</h3>
-                <button type="button" onclick="setQuestion('Where does \'John Doe\' live?')">Where does 'John Doe' live?</button>
-                <button type="button" onclick="setQuestion('Show me all customers from New York.')">Show me all customers from New York.</button>
-                <button type="button" onclick="setQuestion('DESCRIBE: What is the structure of the database?')">DESCRIBE: What is the structure of the database?</button>
-                <p></p>
-            </div>
-        </form>
-        {% if result %}
-            {% if result.error %}
-                <p style="color: red;">Error: {{ result.error }}</p>
-            {% elif result.describe %}
-            <div style="background-color: #f4f4f4; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">{{ result.describe }}</div>
-            {% elif result.sql %}
-                <nav class="navbar">
-                    <a href="#" class="tab-link active" data-tab="query-results">Query Results</a>
-                    <a href="#" class="tab-link" data-tab="chart">Chart</a>
-                </nav>
-                <div class="tab-content">
-                    <div id="query-results" class="tab-pane active">
-                        <pre>{{ result.sql }}</pre>
-                        {% if result.execution.error %}
-                            <p style="color: red;">Execution Error: {{ result.execution.error }}</p>
-                        {% elif result.execution.message %}
-                            <p>{{ result.execution.message }}</p>
-                        {% elif result.execution.columns and result.execution.data %}
-                            <!-- Changed: Removed border attribute -->
-                            <div class="table-container">
-                                <table>
-                                    <tr>
-                                        {% for col in result.execution.columns %}
-                                            <th>{{ col }}</th>
-                                        {% endfor %}
-                                    </tr>
-                                    {% for row in result.execution.data %}
-                                        <tr>
-                                            {% for val in row %}
-                                                <td>{{ val }}</td>
-                                            {% endfor %}
-                                        </tr>
-                                    {% endfor %}
-                                </table>
-                            </div>
-                        {% else %}
-                            <p style="color: red;">Error: No results found.</p>
-                        {% endif %}
-                    </div>
-                    <div id="chart" class="tab-pane" data-loaded="false">
-                        <div id="chart-container"></div>
-                    </div>
-                </div>
-            {% else %}
-                <p style="color: red;">Error: No results found.</p>
-            {% endif %}
-        {% endif %}
-    
-        <!-- Information Footnote -->
-        <div class="footnote">
-            <span>ⓘ</span>
-            This tool, built with llama_cpp and Flask, translates natural language queries into SQL for a PostgreSQL database. It leverages the <strong>{{ model_name }}</strong> model to interact with <strong>{{ db_name }}</strong>. To explore the database schema, refer to the ERD in the pgAdmin service.</a>
-        </div>
-    </div>
-
+    {% include 'components/section.html' %}
 
     <script src="{{ url_for('static', filename='js/utilities.js') }}"></script>
     <script src="{{ url_for('static', filename='js/tabs.js') }}"></script>
