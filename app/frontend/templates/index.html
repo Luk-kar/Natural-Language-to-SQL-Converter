@@ -5,11 +5,14 @@
     <!-- Bokeh resources -->
     <link href="https://cdn.bokeh.org/bokeh/release/bokeh-3.4.3.min.css" rel="stylesheet">
     <link href="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.4.3.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Bokeh JS -->
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.4.3.min.js"></script>
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.4.3.min.js"></script>
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.4.3.min.js"></script>
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-api-3.4.3.min.js"></script>
-    <style>
+    <!-- <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         .section { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
         pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
@@ -42,20 +45,19 @@
             background-color: #f2dede;
             border-color: #ebccd1;
         }
-    </style>
+    </style> -->
 </head>
 <body>
-    <h1 style="text-align: center;">Natural Language to SQL Converter</h1>
+    <h1>Natural Language to SQL Converter</h1>
 
     <div class="section">
         <form method="POST" style="position: relative;">
             <h3>Ask a Question:</h3>
             <div style="position: relative; display: flex; align-items: center;">
-                <input id="questionInput" type="text" name="question" style="width: 100%; padding: 8px; padding-right: 30px;" 
-                       placeholder="e.g. Show me all customers from New York">
+                <input id="questionInput" type="text" name="question" placeholder="e.g. Show me all customers from New York">
                 <span style="position: absolute; right: 10px; font-size: 18px; pointer-events: none;">🔍</span>
             </div>
-            <button type="submit" style="margin-top: 10px;">Get answer!</button>
+            <button type="submit">Get answer!</button>
             <div class="try-queries">
                 <h3>Try these queries:</h3>
                 <button type="button" onclick="setQuestion('Where does \'John Doe\' live?')">Where does 'John Doe' live?</button>
@@ -82,26 +84,28 @@
                         {% elif result.execution.message %}
                             <p>{{ result.execution.message }}</p>
                         {% elif result.execution.columns and result.execution.data %}
-                            <table border="1">
-                                <tr>
-                                    {% for col in result.execution.columns %}
-                                        <th>{{ col }}</th>
-                                    {% endfor %}
-                                </tr>
-                                {% for row in result.execution.data %}
+                            <!-- Changed: Removed border attribute -->
+                            <div class="table-container">
+                                <table>
                                     <tr>
-                                        {% for val in row %}
-                                            <td>{{ val }}</td>
+                                        {% for col in result.execution.columns %}
+                                            <th>{{ col }}</th>
                                         {% endfor %}
                                     </tr>
-                                {% endfor %}
-                            </table>
+                                    {% for row in result.execution.data %}
+                                        <tr>
+                                            {% for val in row %}
+                                                <td>{{ val }}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                </table>
+                            </div>
                         {% else %}
                             <p style="color: red;">Error: No results found.</p>
                         {% endif %}
                     </div>
                     <div id="chart" class="tab-pane" data-loaded="false">
-                        <!-- Plot will be rendered here automatically by Bokeh -->
                         <div id="chart-container"></div>
                     </div>
                 </div>
@@ -111,7 +115,6 @@
         {% endif %}
     
         <!-- Information Footnote -->
-        <p></p>
         <div class="footnote">
             <span>ⓘ</span>
             This tool, built with llama_cpp and Flask, translates natural language queries into SQL for a PostgreSQL database. It leverages the <strong>{{ model_name }}</strong> model to interact with <strong>{{ db_name }}</strong>. To explore the database schema, refer to the ERD in the pgAdmin service.</a>

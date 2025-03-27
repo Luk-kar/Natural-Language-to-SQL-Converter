@@ -1,0 +1,141 @@
+/* General styles */
+body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+/* Section styling */
+.section {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+pre {
+    background: #f4f4f4;
+    padding: 10px;
+    overflow-x: auto;
+}
+
+/* Query buttons */
+.try-queries {
+    margin-top: 10px;
+}
+
+.try-queries button {
+    margin-right: 5px;
+    padding: 5px 10px;
+}
+
+/* Navigation tabs */
+.navbar {
+    margin: 20px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab-link {
+    display: inline-block;
+    padding: 10px 15px;
+    cursor: pointer;
+    text-decoration: none;
+    color: #333;
+}
+
+.tab-link.active {
+    border-bottom: 2px solid #007bff;
+    color: #007bff;
+}
+
+/* Tab content */
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+/* Bokeh integration */
+.bk-root {
+    margin: 20px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+/* Alerts and messages */
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.alert-info {
+    color: #31708f;
+    background-color: #d9edf7;
+    border-color: #bce8f1;
+}
+
+.alert-danger {
+    color: #a94442;
+    background-color: #f2dede;
+    border-color: #ebccd1;
+}
+
+/* Form elements */
+input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    padding-right: 30px;
+}
+
+button[type="submit"] {
+    margin-top: 10px;
+}
+
+/* Table styling - NEW ADDITION */
+table {
+    border-collapse: collapse;
+    width: auto;
+    max-width: 100%;
+    margin: 20px 0;
+    border: 1px solid #ddd;
+}
+
+.table-container {
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Footnote */
+.footnote {
+    margin-top: 20px;
+    font-size: 0.9em;
+}
