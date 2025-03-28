@@ -4,7 +4,7 @@
     
     {% if result.execution.error %}
 
-        {% include 'components/errors/execution.html' %}
+        {% include 'components/notifications/error_execution.html' %}
 
     {% elif result.execution.message %}
 
@@ -32,7 +32,7 @@
         </div>
     {% else %}
 
-        {% include 'components/errors/no_results.html' %}
+        {% include 'components/notifications/note_no_results.html' %}
 
     {% endif %}
 </div>

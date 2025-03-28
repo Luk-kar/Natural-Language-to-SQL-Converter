@@ -1,7 +1,7 @@
 {% if result %}
 {% if result.error %}
 
-    {% include 'components/errors/default.html' %}
+    {% include 'components/notifications/error_default.html' %}
 
 {% elif result.describe %}
 
@@ -13,7 +13,7 @@
 
 {% else %}
 
-    {% include 'components/errors/no_results.html' %}
+    {% include 'components/notifications/note_no_results.html' %}
 
 {% endif %}
 {% endif %}
