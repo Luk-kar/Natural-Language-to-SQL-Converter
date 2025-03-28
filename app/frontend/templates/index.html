@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/alerts.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/buttons.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/forms.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/sections.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/tables.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/tabs.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/third-party/bokeh.css') }}">
@@ -23,7 +23,7 @@
 <body>
     <h1>Natural Language to SQL Converter</h1>
 
-    {% include 'components/section.html' %}
+    {% include 'base.html' %}
 
     <script src="{{ url_for('static', filename='js/utilities.js') }}"></script>
     <script src="{{ url_for('static', filename='js/tabs.js') }}"></script>

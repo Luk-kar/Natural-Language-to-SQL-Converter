@@ -1,0 +1,19 @@
+{% if result %}
+{% if result.error %}
+
+    {% include 'components/errors/default.html' %}
+
+{% elif result.describe %}
+
+    {% include 'components/describe.html' %}
+
+{% elif result.sql %}
+
+    {% include 'components/results/success_result.html' %}
+
+{% else %}
+
+    {% include 'components/errors/no_results.html' %}
+
+{% endif %}
+{% endif %}
