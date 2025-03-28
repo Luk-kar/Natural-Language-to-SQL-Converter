@@ -22,6 +22,14 @@ from app.backend.llm_engine import (
 from app.backend.visualization.plot_artifact_generator import (
     generate_visualization_artifacts,
 )
+from app.backend.visualization.plot_fallback import generate_fallback_plot_config
+from app.backend.visualization.plot_instruction_prompt_formatter import (
+    format_plot_selection_instructions,
+    NO_COMPATIBLE_PLOTS_MESSAGE,
+)
+from app.backend.visualization.plot_context_selector import (
+    build_visualization_context,
+)
 
 
 @flask_app.route("/", methods=["GET", "POST"])
@@ -52,17 +60,34 @@ def index():
                         :MAX_ROWS_DISPLAY
                     ]
 
-                chart_available = (
+                is_chart_possible = False
+                try:
+
+                    chart_context = build_visualization_context(execution_result)
+
+                    prompt_context = format_plot_selection_instructions(chart_context)
+                    is_chart_possible = prompt_context != NO_COMPATIBLE_PLOTS_MESSAGE
+
+                    if is_chart_possible:
+                        generate_fallback_plot_config(execution_result, chart_context)
+
+                except (ValueError, KeyError, TypeError):
+                    is_chart_possible = False
+
+                except Exception as e:
+                    is_chart_possible = False
+
+                data_valid = (
                     "data" in execution_result
                     and len(execution_result.get("data", [])) > 0
-                    and "error" not in execution_result
+                    and "error" not in execution_result,
                 )
 
                 result = {
                     "question": question,
                     "sql": sql,
                     "execution": execution_result,
-                    "chart_available": chart_available,
+                    "chart_available": data_valid and is_chart_possible,
                 }
 
                 session["result"] = result
