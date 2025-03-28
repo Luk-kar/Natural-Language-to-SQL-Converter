@@ -52,6 +52,7 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
 
     def test_happy_path_artifact_generation(self):
         """Test successful end-to-end artifact generation"""
+
         with flask_app.app_context(), patch(
             "app.backend.visualization.plot_artifact_generator.build_visualization_context"
         ) as mock_build, patch(
@@ -99,6 +100,7 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
 
     def test_missing_data_key(self):
         """Test handling of execution data with missing 'data' key"""
+
         with flask_app.app_context():
             invalid_execution = {"columns": ["test"]}
             response = generate_visualization_artifacts(invalid_execution)
@@ -109,6 +111,7 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
 
     def test_missing_columns_key(self):
         """Test handling of execution data with missing 'columns' key"""
+
         with flask_app.app_context():
             invalid_execution = {"data": [[1], [2]]}
             response = generate_visualization_artifacts(invalid_execution)
@@ -119,6 +122,7 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
 
     def test_empty_data_handling(self):
         """Test handling of empty dataset in execution result"""
+
         with flask_app.app_context(), patch(
             "app.backend.visualization.plot_artifact_generator.build_visualization_context"
         ) as mock_build:
@@ -196,6 +200,7 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
 
     def test_error_handling_in_json_generation(self):
         """Test error handling during final JSON generation"""
+
         with flask_app.app_context(), patch(
             "app.backend.visualization.plot_artifact_generator.generate_plot_json"
         ) as mock_generate:
@@ -208,6 +213,7 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
 
     def test_invalid_data_types_handling(self):
         """Test handling of invalid data types in execution result"""
+
         with flask_app.app_context():
             invalid_execution = {
                 "columns": ["valid_col"],
@@ -221,6 +227,7 @@ class TestVisualizationArtifactGeneration(unittest.TestCase):
 
     def test_multi_column_dataset_handling(self):
         """Test handling of datasets with multiple columns"""
+
         with flask_app.app_context(), patch(
             "app.backend.visualization.plot_artifact_generator.generate_plot_json"
         ) as mock_generate:

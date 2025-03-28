@@ -18,6 +18,7 @@ from unittest.mock import patch
 
 # Main Flask app
 from app.app import flask_app
+from flask import jsonify
 
 
 class TestIndexEndpoint(unittest.TestCase):
@@ -122,6 +123,137 @@ class TestIndexEndpoint(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.get_data(as_text=True)
         self.assertIn("Test error", data)
+
+
+# class TestChartTabAvailability(unittest.TestCase):
+#     """
+#     Test chart tab availability based on data validity and plot compatibility.
+#     Validates both visual presentation and backend flag propagation.
+#     """
+
+#     def setUp(self):
+#         self.app = flask_app.test_client()
+#         self.app.testing = True
+
+#     @patch("app.backend.routes.execute_query")
+#     @patch(
+#         "app.backend.visualization.plot_artifact_generator.build_visualization_context"
+#     )
+#     @patch("app.backend.llm_engine.LLM")
+#     @patch("app.backend.routes.get_schema")
+#     def test_chart_tab_enabled_on_valid_data_and_plots(
+#         self, mock_get_schema, mock_llm, mock_build_context, mock_execute_query
+#     ):
+#         """Chart tab should be enabled when valid data exists and plots are possible"""
+
+#         # Setup valid data response
+#         mock_execute_query.return_value = {
+#             "columns": ["x", "y"],
+#             "data": [[1, 10], [2, 20], [3, 30]],
+#         }
+
+#         # Mock visualization context with compatible plots
+#         mock_build_context.return_value = {
+#             "compatible_plots": [{"name": "plot_bar"}],
+#             "data_context": {"columns": {"x": "int", "y": "int"}},
+#         }
+
+#         response = self.app.post("/", data={"question": "Valid data question"})
+#         html = response.get_data(as_text=True)
+
+#         # Verify chart tab is enabled
+#         self.assertIn('data-tab="chart"', html)
+#         self.assertIn('class="tab-link active" data-tab="chart"', html)
+
+#     @patch("app.backend.routes.execute_query")
+#     @patch("app.backend.routes.get_schema")
+#     def test_chart_tab_disabled_on_no_data(self, mock_get_schema, mock_execute_query):
+#         """Chart tab should be disabled when query returns no data"""
+
+#         # Setup empty data response
+#         mock_execute_query.return_value = {"columns": ["x", "y"], "data": []}
+
+#         response = self.app.post("/", data={"question": "Empty data question"})
+#         html = response.get_data(as_text=True)
+
+#         # Verify chart tab is disabled
+#         self.assertIn('data-tab="chart"', html)
+#         self.assertIn('class="tab-link disabled" data-tab="chart"', html)
+
+#     @patch("app.backend.routes.execute_query")
+#     @patch(
+#         "app.backend.visualization.plot_artifact_generator.build_visualization_context"
+#     )
+#     @patch("app.backend.routes.get_schema")
+#     def test_chart_tab_disabled_on_incompatible_plots(
+#         self, mock_get_schema, mock_build_context, mock_execute_query
+#     ):
+#         """Chart tab should be disabled when no compatible plots available"""
+
+#         # Setup valid data but incompatible plots
+#         mock_execute_query.return_value = {"columns": ["id"], "data": [[1], [2], [3]]}
+#         mock_build_context.return_value = {
+#             "compatible_plots": [],
+#             "data_context": {"columns": {"id": "int"}},
+#         }
+
+#         response = self.app.post("/", data={"question": "Incompatible plot question"})
+#         html = response.get_data(as_text=True)
+
+#         # Verify chart tab is disabled
+#         self.assertIn('data-tab="chart"', html)
+#         self.assertIn('class="tab-link disabled" data-tab="chart"', html)
+
+#     @patch("app.backend.routes.execute_query")
+#     @patch("app.backend.routes.get_schema")
+#     def test_chart_tab_disabled_on_execution_error(
+#         self, mock_get_schema, mock_execute_query
+#     ):
+#         """Chart tab should be disabled when query execution has error"""
+
+#         # Setup error response
+#         mock_execute_query.return_value = {
+#             "error": "Invalid column name",
+#             "data": [[1], [2], [3]],
+#         }
+
+#         response = self.app.post("/", data={"question": "Error question"})
+#         html = response.get_data(as_text=True)
+
+#         # Verify chart tab is disabled
+#         self.assertIn('data-tab="chart"', html)
+#         self.assertIn('class="tab-link disabled" data-tab="chart"', html)
+
+#     def test_generate_plots_endpoint_no_data(self):
+#         """Should return error when generating plots without valid data"""
+
+#         with self.app.session_transaction() as sess:
+#             sess["result"] = None  # Clear session data
+
+#         response = self.app.get("/generate_plots")
+
+#         self.assertEqual(response.status_code, 200)
+#         self.assertIn("No data available", response.get_json()["error"])
+
+#     @patch(
+#         "app.backend.visualization.plot_artifact_generator.generate_visualization_artifacts"
+#     )
+#     def test_generate_plots_endpoint_success(self, mock_generate):
+#         """Should return plot JSON when valid data exists"""
+
+#         # Setup mock plot generation
+#         with flask_app.app_context():
+#             mock_generate.return_value = jsonify({"chart": "dummy_plot_data"})
+
+#         with self.app.session_transaction() as sess:
+#             sess["result"] = {
+#                 "execution": {"columns": ["x", "y"], "data": [[1, 10], [2, 20]]}
+#             }
+
+#         response = self.app.get("/generate_plots")
+
+#         self.assertEqual(response.status_code, 200)
+#         self.assertIn("chart", response.get_json())
 
 
 if __name__ == "__main__":

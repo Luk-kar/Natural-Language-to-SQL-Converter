@@ -91,6 +91,7 @@ def index():
                 }
 
                 session["result"] = result
+
         except Exception as e:
             result = {"error": str(e)}
 
@@ -100,19 +101,6 @@ def index():
         model_name=MODEL_NAME,
         db_name=DB_CONFIG["database"],
     )
-
-
-@flask_app.route("/get_last_sql")
-def get_last_sql():
-    """Return the last generated SQL from session"""
-    result = session.get("result")
-    # Extract SQL if result exists and contains 'sql', else default message
-    sql = (
-        result.get("sql", "No SQL queries generated yet")
-        if result
-        else "No SQL queries generated yet"
-    )
-    return jsonify({"sql": sql})
 
 
 @flask_app.route("/generate_plots")
@@ -131,7 +119,10 @@ def generate_plots():
 
 @flask_app.route("/generate_tooltip")
 def generate_tooltip():
-    result = session.get("result")
-    sql = result.get("sql", "") if result else ""
-    tooltip = f"SQL Length: {len(sql)} characters" if sql else "No SQL available"
-    return jsonify({"tooltip": tooltip})
+    pass
+
+
+#     result = session.get("result")
+#     sql = result.get("sql", "") if result else ""
+#     tooltip = f"SQL Length: {len(sql)} characters" if sql else "No SQL available"
+#     return jsonify({"tooltip": tooltip})
