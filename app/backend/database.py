@@ -73,9 +73,11 @@ def execute_query(sql: str):
         cur.execute(sql)
 
         if cur.description:  # For SELECT queries
+
             columns = [desc[0] for desc in cur.description]
             results = cur.fetchall()
             return {"columns": columns, "data": results}
+
         else:  # For non-SELECT queries
             raise ValueError("Only SELECT queries are supported.")
 

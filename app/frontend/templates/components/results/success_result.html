@@ -1,7 +1,7 @@
 <nav class="navbar">
 
     <a href="#" class="tab-link active" data-tab="query-results">Query Results</a>
-    <a href="#" class="tab-link" data-tab="chart">Chart</a>
+    <a href="#" class="tab-link {% if not result.chart_available %}disabled{% endif %}" data-tab="chart">Chart</a>
 
 </nav>
 

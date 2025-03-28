@@ -51,10 +51,18 @@ def index():
                     execution_result["data"] = execution_result["data"][
                         :MAX_ROWS_DISPLAY
                     ]
+
+                chart_available = (
+                    "data" in execution_result
+                    and len(execution_result.get("data", [])) > 0
+                    and "error" not in execution_result
+                )
+
                 result = {
                     "question": question,
                     "sql": sql,
                     "execution": execution_result,
+                    "chart_available": chart_available,
                 }
 
                 session["result"] = result

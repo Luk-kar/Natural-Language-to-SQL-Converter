@@ -17,6 +17,13 @@
     color: #007bff;
 }
 
+.tab-link.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+    color: #6c757d !important;
+}
+
 /* Tab content */
 .tab-pane {
     display: none;
