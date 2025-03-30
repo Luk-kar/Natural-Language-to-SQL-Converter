@@ -51,7 +51,9 @@ def index():
                 stripped_question = question.strip()[len("DESCRIBE:") :].strip()
                 description = generate_describe(schema, stripped_question)
                 result = {"question": question, "describe": description}
+
             else:
+
                 sql = generate_sql(schema, question)
                 execution_result = execute_query(sql)
 
@@ -108,11 +110,19 @@ def generate_plots():
     """
     Generate a plot based on the previously executed SQL query result.
     """
+
     result = session.get("result")
+
+    if not result:
+        return jsonify({"error": "No data available for plotting"}), 400
+
+    if "execution" not in result:
+        return jsonify({"error": "No execution data available"}), 400
+
     execution = result["execution"]
 
-    if not result or "execution" not in result or "data" not in execution:
-        return jsonify({"error": "No data available for plotting"})
+    if "data" not in execution:
+        return jsonify({"error": "No dataset available for plotting"}), 400
 
     return generate_visualization_artifacts(execution)
 
