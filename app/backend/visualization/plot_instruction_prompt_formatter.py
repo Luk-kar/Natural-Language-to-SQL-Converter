@@ -10,7 +10,10 @@ Key Features:
 """
 
 # Visualization
-from app.backend.visualization.consts import NO_COMPATIBLE_PLOTS_MESSAGE
+from app.backend.visualization.consts import (
+    NO_COMPATIBLE_PLOTS_MESSAGE,
+    MIN_ROWS_FOR_PLOTS,
+)
 
 
 def format_plot_selection_instructions(plot_context: dict) -> str:
@@ -33,7 +36,7 @@ def format_plot_selection_instructions(plot_context: dict) -> str:
         ValueError: If the dataset context does not contain required keys.
     """
 
-    if len(plot_context["compatible_plots"]) == 0:
+    if len(plot_context["compatible_plots"]) <= MIN_ROWS_FOR_PLOTS:
         return NO_COMPATIBLE_PLOTS_MESSAGE
 
     validated_context = validate_plot_context(plot_context)

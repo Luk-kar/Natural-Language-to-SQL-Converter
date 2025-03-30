@@ -182,6 +182,91 @@ class TestChartTabAvailability(unittest.TestCase):
         self.assertIn('class="tab-link active" data-tab="query-results"', html)
         self.assertNotIn('class="tab-link disabled" data-tab="chart"', html)
 
+    @patch("app.backend.routes.execute_query")
+    @patch("app.backend.llm_engine.LLM")
+    @patch("app.backend.routes.get_schema")
+    def test_chart_tab_disabled_when_unavailable(
+        self, mock_get_schema, mock_llm, mock_execute_query
+    ):
+        """
+        Test chart tab is disabled when:
+        - Data exists but is incompatible for visualization (non-numeric columns)
+        - Backend flags chart_available=False
+        - Validate visual presentation reflects disabled state
+        """
+        # Setup dummy schema
+        dummy_schema = "dummy schema text"
+        mock_get_schema.return_value = dummy_schema
+
+        # Setup dummy LLM response for SQL generation
+        dummy_sql = "SELECT name FROM users;"  # Single non-numeric column
+        dummy_llm_response = {"choices": [{"text": dummy_sql}]}
+        mock_llm.create_completion.return_value = dummy_llm_response
+
+        # Setup dummy execution result with non-plottable data
+        dummy_execution = {
+            "columns": ["name"],
+            "data": [("Alice",), ("Bob",)],  # No numeric data for plotting
+        }
+        mock_execute_query.return_value = dummy_execution
+
+        # Issue POST request
+        response = self.app.post("/", data={"question": "Get non-plottable data"})
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+
+        # Verify SQL appears in output
+        self.assertIn(dummy_sql, html)
+
+        # Validate chart tab is disabled
+        self.assertIn('data-tab="chart"', html)  # Tab exists
+        self.assertIn(
+            'class="tab-link disabled" data-tab="chart"', html
+        )  # Disabled state
+
+        # Validate correct active tab
+        self.assertIn('class="tab-link active" data-tab="query-results"', html)
+        self.assertNotIn('class="tab-link active" data-tab="chart"', html)
+
+    @patch("app.backend.routes.execute_query")
+    @patch("app.backend.llm_engine.LLM")
+    @patch("app.backend.routes.get_schema")
+    def test_chart_tab_disabled_on_empty_data(
+        self, mock_get_schema, mock_llm, mock_execute_query
+    ):
+        """
+        Test chart tab disabled when query returns empty dataset:
+        - Valid columns but no rows
+        - Backend should set chart_available=False
+        - Frontend should show disabled chart tab
+        - Verify empty state UI components
+        """
+        # Setup dummy schema and LLM
+        dummy_schema = "dummy schema text"
+        mock_get_schema.return_value = dummy_schema
+        dummy_sql = "SELECT * FROM empty_table;"
+        mock_llm.create_completion.return_value = {"choices": [{"text": dummy_sql}]}
+
+        # Mock empty dataset response
+        mock_execute_query.return_value = {
+            "columns": ["id", "name"],
+            "data": [],  # Empty data array
+        }
+
+        response = self.app.post("/", data={"question": "Get empty dataset"})
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+
+        # Verify empty state components
+        self.assertIn("No results found", html)  # Empty state message
+
+        # Verify chart tab state
+        self.assertIn('data-tab="chart"', html)  # Tab exists
+        self.assertIn('class="tab-link disabled" data-tab="chart"', html)  # Disabled
+        self.assertIn(
+            'class="tab-link active" data-tab="query-results"', html
+        )  # Correct active
+
     # @patch("app.backend.routes.execute_query")
     # @patch(
     #     "app.backend.visualization.plot_artifact_generator.build_visualization_context"
