@@ -127,8 +127,23 @@ class TestIndexEndpoint(unittest.TestCase):
 
 class TestChartTabAvailability(unittest.TestCase):
     """
-    Test chart tab availability based on data validity and plot compatibility.
-    Validates both visual presentation and backend flag propagation.
+    Test suite for chart tab visibility and interactivity conditions.
+
+    Validates:
+    - Chart tab state (enabled/disabled) based on data validity and plot compatibility
+    - Backend-to-frontend propagation of chart availability flags
+    - Visual presentation of tab states through CSS classes and attributes
+    - Error handling in plot generation endpoint for missing or invalid data
+    - Dynamic plot loading mechanisms upon user interaction
+    - Empty state UI components when no data is available
+
+    Tests verify proper system behavior through:
+    - Mocked backend services (LLM, database, schema retrieval)
+    - Response status code and HTML content assertions
+    - Session data validation across multiple test scenarios
+    - Integration with visualization generation utilities
+    - Frontend JavaScript interactions simulated via endpoint calls
+    - Edge cases (empty datasets, non-numeric data, execution errors)
     """
 
     def setUp(self):
