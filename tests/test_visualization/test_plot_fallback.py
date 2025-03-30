@@ -1,8 +1,7 @@
+# Python
 import unittest
 import random
 import string
-import pandas as pd
-from unittest.mock import patch
 
 from app.backend.visualization.plot_fallback import generate_fallback_plot_config
 
