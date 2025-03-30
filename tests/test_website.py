@@ -125,45 +125,91 @@ class TestIndexEndpoint(unittest.TestCase):
         self.assertIn("Test error", data)
 
 
-# class TestChartTabAvailability(unittest.TestCase):
-#     """
-#     Test chart tab availability based on data validity and plot compatibility.
-#     Validates both visual presentation and backend flag propagation.
-#     """
+class TestChartTabAvailability(unittest.TestCase):
+    """
+    Test chart tab availability based on data validity and plot compatibility.
+    Validates both visual presentation and backend flag propagation.
+    """
 
-#     def setUp(self):
-#         self.app = flask_app.test_client()
-#         self.app.testing = True
+    def setUp(self):
+        self.app = flask_app.test_client()
+        self.app.testing = True
 
-#     @patch("app.backend.routes.execute_query")
-#     @patch(
-#         "app.backend.visualization.plot_artifact_generator.build_visualization_context"
-#     )
-#     @patch("app.backend.llm_engine.LLM")
-#     @patch("app.backend.routes.get_schema")
-#     def test_chart_tab_enabled_on_valid_data_and_plots(
-#         self, mock_get_schema, mock_llm, mock_build_context, mock_execute_query
-#     ):
-#         """Chart tab should be enabled when valid data exists and plots are possible"""
+    @patch("app.backend.routes.execute_query")
+    @patch("app.backend.llm_engine.LLM")
+    @patch("app.backend.routes.get_schema")
+    def test_chart_tab_enabled_on_valid_data_and_plots(
+        self, mock_get_schema, mock_llm, mock_execute_query
+    ):
+        """
+        Test a POST request for SQL generation:
+        - get_schema returns a dummy schema.
+        - The LLM's create_completion method returns a known SQL query.
+        - execute_query returns a result with columns and data rows.
+        - The rendered output should include the SQL query and a table with rows.
+        """
+        # Setup dummy schema
+        dummy_schema = "dummy schema text"
+        mock_get_schema.return_value = dummy_schema
 
-#         # Setup valid data response
-#         mock_execute_query.return_value = {
-#             "columns": ["x", "y"],
-#             "data": [[1, 10], [2, 20], [3, 30]],
-#         }
+        # Setup dummy LLM response for SQL generation.
+        dummy_sql = "SELECT * FROM users;"
+        dummy_llm_response = {"choices": [{"text": dummy_sql}]}
+        # Set create_completion on the dummy llm.
+        mock_llm.create_completion.return_value = dummy_llm_response
 
-#         # Mock visualization context with compatible plots
-#         mock_build_context.return_value = {
-#             "compatible_plots": [{"name": "plot_bar"}],
-#             "data_context": {"columns": {"x": "int", "y": "int"}},
-#         }
+        # Setup dummy execution result with columns and rows.
+        dummy_execution = {
+            "columns": ["id", "name"],
+            "data": [(1, "Alice"), (2, "Bob")],
+        }
+        mock_execute_query.return_value = dummy_execution
 
-#         response = self.app.post("/", data={"question": "Valid data question"})
-#         html = response.get_data(as_text=True)
+        # Issue a POST request with a question that triggers SQL generation.
+        response = self.app.post("/", data={"question": "Get all users"})
 
-#         # Verify chart tab is enabled
-#         self.assertIn('data-tab="chart"', html)
-#         self.assertIn('class="tab-link active" data-tab="chart"', html)
+        print(response.data)
+        print(response.status_code)
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+
+        # Verify that the generated SQL is included.
+        self.assertIn(dummy_sql, html)
+
+        # Verify that the table with query results appears.
+        self.assertIn('data-tab="chart"', html)
+        self.assertIn('class="tab-link " data-tab="chart"', html)
+        self.assertIn('class="tab-link active" data-tab="query-results"', html)
+        self.assertNotIn('class="tab-link disabled" data-tab="chart"', html)
+
+    # @patch("app.backend.routes.execute_query")
+    # @patch(
+    #     "app.backend.visualization.plot_artifact_generator.build_visualization_context"
+    # )
+    # @patch("app.backend.llm_engine.LLM")
+    # @patch("app.backend.routes.get_schema")
+    # def test_chart_tab_enabled_on_valid_data_and_plots(
+    #     self, mock_get_schema, mock_llm, mock_build_context, mock_execute_query
+    # ):
+    #     """Chart tab should be enabled when valid data exists and plots are possible"""
+
+    #     # Setup valid data response
+    #     mock_execute_query.return_value = {
+    #         "columns": ["x", "y"],
+    #         "data": [[1, 10], [2, 20], [3, 30]],
+    #     }
+
+    #     # Mock visualization context with compatible plots
+    #     mock_build_context.return_value = {
+    #         "compatible_plots": [{"name": "plot_bar"}],
+    #         "data_context": {"columns": {"x": "int", "y": "int"}},
+    #     }
+
+    #     response = self.app.post("/", data={"question": "Valid data question"})
+    #     html = response.get_data(as_text=True)
+
+    #     # Verify chart tab is enabled
+
 
 #     @patch("app.backend.routes.execute_query")
 #     @patch("app.backend.routes.get_schema")
