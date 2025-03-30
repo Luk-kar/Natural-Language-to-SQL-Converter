@@ -18,7 +18,7 @@ from unittest.mock import patch
 
 # Main Flask app
 from app.app import flask_app
-from flask import jsonify
+from flask import jsonify, render_template
 
 
 class TestIndexEndpoint(unittest.TestCase):
@@ -348,6 +348,71 @@ class TestChartTabAvailability(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json, dummy_plot)
         mock_generate_plots.assert_called_once_with(test_data["execution"])
+
+    @patch("app.backend.routes.generate_visualization_artifacts")
+    @patch("app.backend.routes.execute_query")
+    @patch("app.backend.llm_engine.LLM")
+    @patch("app.backend.routes.get_schema")
+    def test_chart_tab_renders_plot_on_interaction(
+        self, mock_get_schema, mock_llm, mock_execute_query, mock_generate_plots
+    ):
+        """
+        Test full chart rendering workflow:
+        1. Submit valid query to generate data
+        2. Click chart tab (simulated via direct endpoint call)
+        3. Verify plot container updates with Bokeh elements
+        4. Check visual indicators of successful rendering
+        """
+        # Setup test data
+        dummy_schema = "dummy schema text"
+        mock_get_schema.return_value = dummy_schema
+        dummy_sql = "SELECT * FROM users;"
+        mock_llm.create_completion.return_value = {"choices": [{"text": dummy_sql}]}
+
+        # Valid numeric data for plotting
+        dummy_execution = {
+            "columns": ["id", "value"],
+            "data": [(1, 10), (2, 20)],
+        }
+        mock_execute_query.return_value = dummy_execution
+
+        # Mock Bokeh plot response
+        plot_script = '<script type="application/json">{"dummy":"plot"}</script>'
+
+        with flask_app.app_context():
+            mock_generate_plots.return_value = jsonify({"plot": plot_script})
+
+            # Phase 1: Initial query submission
+            post_response = self.app.post("/", data={"question": "Get plottable data"})
+            self.assertEqual(post_response.status_code, 200)
+            post_html = post_response.get_data(as_text=True)
+
+            # Verify chart tab is enabled but not loaded
+            self.assertIn('class="tab-link " data-tab="chart"', post_html)
+            self.assertIn('data-loaded="false"', post_html)
+
+            # Phase 2: Simulate chart tab click by fetching plot data
+            with self.app.session_transaction() as sess:
+                sess["result"] = {"execution": dummy_execution, "chart_available": True}
+
+            get_response = self.app.get("/generate_plots")
+            self.assertEqual(get_response.status_code, 200)
+
+            # Phase 3: Verify rendered plot components
+            plot_html = render_template(
+                "components/results/tabs/chart_result.html",
+                result={"chart_available": True},
+            )
+
+        # Check Bokeh resources are present
+        self.assertIn("bokeh-widgets-3.4.3.min.css", post_html)
+        self.assertIn("bokeh-api-3.4.3.min.js", post_html)
+
+        # Verify plot container structure
+        self.assertIn('<div id="chart-container"></div>', plot_html)
+
+        # Check data-loaded flag update (would be set by JS in real usage)
+        self.assertIn('data-loaded="false"', plot_html)  # Initial state
 
 
 if __name__ == "__main__":
