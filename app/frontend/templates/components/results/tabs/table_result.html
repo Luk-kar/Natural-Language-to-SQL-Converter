@@ -1,6 +1,17 @@
 <div id="query-results" class="tab-pane active">
 
-    <pre>{{ result.sql }}</pre>
+    <div class="sql-container">
+        <pre class="sql-display">
+            {%- if result.sql|length > 200 -%}
+                {{ result.sql[:200] }}...
+            {%- else -%}
+                {{ result.sql }}
+            {%- endif -%}
+        </pre>
+        {% if result.sql|length > 200 %}
+            <span class="show-full-query" data-full="{{ result.sql }}">Show full query</span>
+        {% endif %}
+    </div>
     
     {% if result.execution.error %}
 
