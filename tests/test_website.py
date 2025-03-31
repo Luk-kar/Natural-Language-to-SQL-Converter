@@ -26,7 +26,7 @@ from app.backend.llm_engine import create_chart_dictionary
 from app.backend.visualization.plot_router import PLOT_LIST
 
 
-class TestIndexEndpoint(unittest.TestCase):
+class HomepageSQLQueryTests(unittest.TestCase):
     """
     Test suite for core index endpoint functionality and error handling.
 
@@ -436,6 +436,22 @@ class TestChartTabAvailability(unittest.TestCase):
 
 
 class TestChartGeneration(unittest.TestCase):
+    """
+    Test suite for chart generation workflow via LLM engine and visualization utilities.
+
+    Validates:
+    - Invocation of create_chart_dictionary when valid plottable data exists in session.
+    - Integration between LLM-based chart configuration and chart dictionary creation.
+    - Proper processing of both numeric and categorical data for dynamic plot generation.
+    - Successful HTTP responses and backend session management across chart generation endpoints.
+    - End-to-end simulation of user interaction with chart tab triggering and proper Bokeh output structure.
+
+    Tests verify proper system behavior through:
+    - Use of mocked backend services (LLM engine and chart dictionary utility).
+    - Assertions on HTTP status codes and JSON responses.
+    - Validation of prompt context for chart configuration including "Available Plot Types" and "Data Overview".
+    - Simulation of chart tab clicks to confirm correct rendering and session propagation.
+    """
 
     def setUp(self):
         self.app = flask_app.test_client()
