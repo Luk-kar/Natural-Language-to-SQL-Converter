@@ -20,7 +20,6 @@ from app.backend.visualization.plot_context_selector import (
 )
 from app.backend.visualization.plot_router import (
     generate_plot_json,
-    create_chart_dictionary,
     generate_fallback_plot_config,
     NO_COMPATIBLE_PLOTS_MESSAGE,
     get_plot_function,
@@ -37,7 +36,7 @@ from bokeh.models import Plot
 from flask import Flask
 
 # LLM
-from app.backend.llm_engine import get_llm, LLM
+from app.backend.llm_engine import LLM, create_chart_dictionary
 
 
 class TestPlotContextSelector(unittest.TestCase):
