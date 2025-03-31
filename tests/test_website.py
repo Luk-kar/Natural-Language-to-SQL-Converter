@@ -441,7 +441,7 @@ class TestChartGeneration(unittest.TestCase):
 
 
 @patch("app.backend.llm_engine.LLM.create_completion")
-@patch("app.backend.visualization.plot_router.create_chart_dictionary")
+@patch("app.backend.llm_engine.create_chart_dictionary")
 def test_create_chart_dict_called_on_valid_data(self, mock_chart_dict, mock_llm):
     """
     Verify create_chart_dictionary is invoked when:
