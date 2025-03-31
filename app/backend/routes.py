@@ -130,9 +130,3 @@ def generate_plots():
 @flask_app.route("/generate_tooltip")
 def generate_tooltip():
     pass
-
-
-#     result = session.get("result")
-#     sql = result.get("sql", "") if result else ""
-#     tooltip = f"SQL Length: {len(sql)} characters" if sql else "No SQL available"
-#     return jsonify({"tooltip": tooltip})

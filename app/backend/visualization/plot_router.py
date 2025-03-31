@@ -46,7 +46,6 @@ from app.backend.llm_engine import (
 
 # Visualization
 from app.backend.visualization.consts import NO_COMPATIBLE_PLOTS_MESSAGE
-from app.backend.llm_engine import create_chart_dictionary
 from app.backend.visualization.plot_fallback import generate_fallback_plot_config
 
 # Flask

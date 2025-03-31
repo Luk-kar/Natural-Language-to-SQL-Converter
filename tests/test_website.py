@@ -20,6 +20,9 @@ from unittest.mock import patch
 from app.app import flask_app
 from flask import jsonify, render_template
 
+# LLM
+from app.backend.llm_engine import create_chart_dictionary
+
 
 class TestIndexEndpoint(unittest.TestCase):
     """
@@ -334,7 +337,7 @@ class TestChartTabAvailability(unittest.TestCase):
         self.assertEqual(response.json, {"error": "No dataset available for plotting"})
 
     @patch("app.backend.routes.generate_visualization_artifacts")
-    def test_generate_plots_endpoint_success(self, mock_generate_plots):
+    def test_generate_plots_endpoint_success(self, mock_visualization_creator):
         """
         Test successful plot generation workflow:
         - Valid session data exists
@@ -350,7 +353,7 @@ class TestChartTabAvailability(unittest.TestCase):
         with flask_app.app_context():
             # Mock visualization output within app context
             dummy_plot = {"type": "line", "data": {}}
-            mock_generate_plots.return_value = jsonify(dummy_plot)
+            mock_visualization_creator.return_value = jsonify(dummy_plot)
 
             # Set session data using test client's session transaction
             with self.app.session_transaction() as sess:
@@ -362,7 +365,7 @@ class TestChartTabAvailability(unittest.TestCase):
         # Verify response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json, dummy_plot)
-        mock_generate_plots.assert_called_once_with(test_data["execution"])
+        mock_visualization_creator.assert_called_once_with(test_data["execution"])
 
     @patch("app.backend.routes.generate_visualization_artifacts")
     @patch("app.backend.routes.execute_query")
@@ -428,6 +431,56 @@ class TestChartTabAvailability(unittest.TestCase):
 
         # Check data-loaded flag update (would be set by JS in real usage)
         self.assertIn('data-loaded="false"', plot_html)  # Initial state
+
+
+class TestChartGeneration(unittest.TestCase):
+
+    def setUp(self):
+        self.app = flask_app.test_client()
+        self.app.testing = True
+
+
+@patch("app.backend.llm_engine.LLM.create_completion")
+@patch("app.backend.visualization.plot_router.create_chart_dictionary")
+def test_create_chart_dict_called_on_valid_data(self, mock_chart_dict, mock_llm):
+    """
+    Verify create_chart_dictionary is invoked when:
+    - Valid plottable data exists in session
+    - Visualization pipeline executes
+    - LLM-based chart configuration is attempted
+    """
+    # Setup valid numeric data
+    test_data = {
+        "execution": {
+            "columns": ["x", "y"],
+            "data": [[1, 10], [2, 20], [3, 30]],
+        }
+    }
+
+    # Mock responses
+    mock_chart_dict.return_value = {
+        "plot_type": "line",
+        "arguments": {"category_column": "x", "value_column": "y"},
+    }
+    mock_llm.return_value = {"choices": [{"text": "..."}]}
+
+    with flask_app.app_context():
+        with self.app.session_transaction() as sess:
+            sess["result"] = test_data
+
+        response = self.app.get("/generate_plots")
+
+    # Verify HTTP success
+    self.assertEqual(response.status_code, 200)
+
+    # Verify mocks were called
+    mock_chart_dict.assert_called_once()
+    mock_llm.assert_called_once()
+
+    # Verify prompt context
+    args, _ = mock_chart_dict.call_args
+    self.assertIn("Available Plot Types", args[0])
+    self.assertIn("Data Overview", args[0])
 
 
 if __name__ == "__main__":

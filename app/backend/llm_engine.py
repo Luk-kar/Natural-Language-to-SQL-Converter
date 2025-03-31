@@ -140,14 +140,17 @@ def create_chart_dictionary(prompt: str) -> dict:
 
             try:
                 parsed_dict = json.loads(dict_str)
+
                 if isinstance(parsed_dict, dict):
                     return parsed_dict
 
             except json.JSONDecodeError:
                 try:
                     parsed_dict = ast.literal_eval(dict_str)
+
                     if isinstance(parsed_dict, dict):
                         return parsed_dict
+
                 except (SyntaxError, ValueError):
                     continue  # Move to next block if parsing fails
 
