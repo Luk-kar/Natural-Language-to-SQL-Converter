@@ -13,6 +13,7 @@ isolating external dependencies through patching of LLM and database systems.
 """
 
 # Python
+import json
 import unittest
 from unittest.mock import patch
 
@@ -22,6 +23,7 @@ from flask import jsonify, render_template
 
 # LLM
 from app.backend.llm_engine import create_chart_dictionary
+from app.backend.visualization.plot_router import PLOT_LIST
 
 
 class TestIndexEndpoint(unittest.TestCase):
@@ -439,48 +441,100 @@ class TestChartGeneration(unittest.TestCase):
         self.app = flask_app.test_client()
         self.app.testing = True
 
-
-@patch("app.backend.llm_engine.LLM.create_completion")
-@patch("app.backend.llm_engine.create_chart_dictionary")
-def test_create_chart_dict_called_on_valid_data(self, mock_chart_dict, mock_llm):
-    """
-    Verify create_chart_dictionary is invoked when:
-    - Valid plottable data exists in session
-    - Visualization pipeline executes
-    - LLM-based chart configuration is attempted
-    """
-    # Setup valid numeric data
-    test_data = {
-        "execution": {
-            "columns": ["x", "y"],
-            "data": [[1, 10], [2, 20], [3, 30]],
+    @patch("app.backend.llm_engine.LLM.create_completion")
+    @patch("app.backend.llm_engine.create_chart_dictionary")
+    def test_create_chart_dict_called_on_valid_data(self, mock_chart_dict, mock_llm):
+        """
+        Verify create_chart_dictionary is invoked when:
+        - Valid plottable data exists in session
+        - Visualization pipeline executes
+        - LLM-based chart configuration is attempted
+        """
+        # Setup valid numeric data
+        test_data = {
+            "execution": {
+                "columns": ["x", "y"],
+                "data": [[1, 10], [2, 20], [3, 30]],
+            }
         }
-    }
 
-    # Mock responses
-    mock_chart_dict.return_value = {
-        "plot_type": "line",
-        "arguments": {"category_column": "x", "value_column": "y"},
-    }
-    mock_llm.return_value = {"choices": [{"text": "..."}]}
+        # Mock responses
+        mock_chart_dict.return_value = {
+            "plot_type": "line",
+            "arguments": {"category_column": "x", "value_column": "y"},
+        }
+        mock_llm.return_value = {"choices": [{"text": "..."}]}
 
-    with flask_app.app_context():
-        with self.app.session_transaction() as sess:
-            sess["result"] = test_data
+        with flask_app.app_context():
+            with self.app.session_transaction() as sess:
+                sess["result"] = test_data
 
-        response = self.app.get("/generate_plots")
+            response = self.app.get("/generate_plots")
 
-    # Verify HTTP success
-    self.assertEqual(response.status_code, 200)
+        # Verify HTTP success
+        self.assertEqual(response.status_code, 200)
 
-    # Verify mocks were called
-    mock_chart_dict.assert_called_once()
-    mock_llm.assert_called_once()
+        # Verify mocks were called
+        mock_chart_dict.assert_called_once()
+        mock_llm.assert_called_once()
 
-    # Verify prompt context
-    args, _ = mock_chart_dict.call_args
-    self.assertIn("Available Plot Types", args[0])
-    self.assertIn("Data Overview", args[0])
+        # Verify prompt context
+        args, _ = mock_chart_dict.call_args
+        self.assertIn("Available Plot Types", args[0])
+        self.assertIn("Data Overview", args[0])
+
+    @patch("app.backend.routes.execute_query")
+    @patch("app.backend.routes.get_schema")
+    @patch("app.backend.visualization.plot_router.create_chart_dictionary")
+    @patch("app.backend.llm_engine.LLM.create_completion")
+    def test_chart_tab_click_triggers_plot_generation(
+        self, mock_llm, mock_chart_dict, mock_get_schema, mock_execute_query
+    ):
+        """
+        Verify full chart tab interaction flow with proper categorical data
+        """
+        # Setup database mocks with string-based categories
+        mock_get_schema.return_value = "dummy schema"
+        mock_execute_query.return_value = {
+            "columns": ["category", "value"],
+            "data": [["A", 10], ["B", 20], ["C", 30]],
+        }
+
+        # Mock LLM responses with valid categorical mapping
+        mock_llm.return_value = {
+            "choices": [{"text": "SELECT category, value FROM data"}]
+        }
+        mock_chart_dict.return_value = {
+            "plot_type": "bar",
+            "arguments": {
+                "category_column": "category",
+                "value_column": "value",
+                "title": "Test Chart",
+            },
+        }
+
+        # Phase 1: Submit query with mocked database
+        post_response = self.app.post("/", data={"question": "Get plot data"})
+        self.assertEqual(post_response.status_code, 200)
+
+        # Phase 2: Simulate chart tab click with valid categorical data
+        get_response = self.app.get("/generate_plots")
+        self.assertEqual(get_response.status_code, 200)
+
+        # Phase 3: Verify Bokeh output structure
+        response_data = json.loads(get_response.data)
+
+        print(type(response_data))
+        self.assertIn("root_id", response_data)
+        self.assertIn("target_id", response_data)
+
+        self.assertIn("doc", response_data)
+
+        doc = response_data.get("doc", {})
+
+        self.assertIn("roots", doc)
+        self.assertIn("title", doc)
+        self.assertIn("Figure", doc["roots"][0]["name"])
 
 
 if __name__ == "__main__":
