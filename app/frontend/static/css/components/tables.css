@@ -73,9 +73,9 @@ tr:hover {
 }
 
 .sql-display-wrapper {
-    display: block !important;
-    align-items: unset !important;
-    gap: unset !important;
+    position: relative; /* Required for absolute positioning of ⓘ */
+    display: block;
+    width: 100%;
 }
 
 .sql-clause {

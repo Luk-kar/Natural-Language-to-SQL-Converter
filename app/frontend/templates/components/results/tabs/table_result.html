@@ -1,17 +1,20 @@
 <div id="query-results" class="tab-pane active">
 
     <div class="sql-container">
-        <pre class="sql-display">
-            {%- if result.sql|length > 200 -%}
-                {{ result.sql[:200] }}...
-            {%- else -%}
-                {{ result.sql }}
+        <div class="sql-display-wrapper">
+            <pre class="sql-display">
+                {%- if result.sql|length > 200 -%}
+                    {{ result.sql[:200] }}...
+                {%- else -%}
+                    {{ result.sql }}
+                {%- endif -%}
+            </pre>
+            {% if result.sql|length > 200 %}
+                <span class="show-full-query" data-full="{{ result.sql }}">Show full query</span>
+            {% else %}
                 <span class="sql-info-icon">ⓘ</span>
-            {%- endif -%}
-        </pre>
-        {% if result.sql|length > 200 %}
-            <span class="show-full-query" data-full="{{ result.sql }}">Show full query</span>
-        {% endif %}
+            {% endif %}
+        </div>
     </div>
     
     {% if result.execution.error %}

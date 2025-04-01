@@ -7,6 +7,15 @@ function toggleSqlExpansion(element) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Handle click on static ⓘ icons
+    document.querySelectorAll('.sql-info-icon').forEach(icon => {
+        icon.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const pre = this.closest('.sql-display-wrapper').querySelector('.sql-display');
+            if (pre) processSqlClauses(pre);
+        });
+    });
+
     // Expand SQL query on click
     document.querySelectorAll('.show-full-query').forEach(button => {
         button.addEventListener('click', function (e) {
@@ -18,30 +27,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 pre.textContent = fullSql;
                 this.style.display = 'none';
 
-                // Create the info icon
+                // Create and add the info icon
                 const infoIcon = document.createElement('span');
                 infoIcon.textContent = 'ⓘ';
                 infoIcon.className = 'sql-info-icon';
-
-                // Add click handler to info icon HERE
                 infoIcon.addEventListener('click', function (e) {
                     e.stopPropagation();
                     processSqlClauses(pre);
                 });
 
-                // Create a flex container to hold the pre and icon
-                const wrapper = document.createElement('div');
-                wrapper.className = 'sql-display-wrapper';
-
-                // Replace the pre with the wrapper and append pre and icon
-                pre.parentNode.insertBefore(wrapper, pre);
-                wrapper.appendChild(pre);
-                wrapper.appendChild(infoIcon);
+                const wrapper = sqlContainer.querySelector('.sql-display-wrapper');
+                if (wrapper) wrapper.appendChild(infoIcon);
             }
         });
     });
 });
-
 function processSqlClauses(preElement) {
     const sql = preElement.textContent;
     const clauses = parseSqlClauses(sql);
