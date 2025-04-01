@@ -87,7 +87,7 @@ def index():
 
                 result = {
                     "question": question,
-                    "sql": sql + "x" * 200,
+                    "sql": sql,
                     "execution": execution_result,
                     "chart_available": data_valid and is_chart_possible,
                 }
