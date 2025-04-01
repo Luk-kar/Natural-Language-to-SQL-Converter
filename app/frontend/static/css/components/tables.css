@@ -62,3 +62,17 @@ tr:hover {
 .sql-container:hover .show-full-query {
     display: inline-block;
 }
+
+.sql-info-icon {
+    cursor: pointer;
+    font-size: 0.9em;
+    color: #666;
+    flex-shrink: 0;
+}
+
+.sql-display-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}

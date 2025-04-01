@@ -6,6 +6,7 @@
                 {{ result.sql[:200] }}...
             {%- else -%}
                 {{ result.sql }}
+                <span class="sql-info-icon">ⓘ</span>
             {%- endif -%}
         </pre>
         {% if result.sql|length > 200 %}
