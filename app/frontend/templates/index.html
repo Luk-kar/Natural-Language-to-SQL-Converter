@@ -25,7 +25,9 @@
 
     {% include 'base.html' %}
 
-    <script src="{{ url_for('static', filename='js/utilities.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/set_question.js') }}"></script>
     <script src="{{ url_for('static', filename='js/tabs.js') }}"></script>
-</body>
+    <script src="{{ url_for('static', filename='js/sql_query_display/sql_expansion.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sql_query_display/sql_handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sql_query_display/sql_interaction.js') }}"></script>
 </html>
