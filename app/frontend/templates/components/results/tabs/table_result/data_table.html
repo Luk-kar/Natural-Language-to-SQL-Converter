@@ -1,16 +1,16 @@
-
-Copy
-<div id="query-results" class="tab-pane active">
-    
-    {% include 'components/results/tabs/table_result/sql_display.html' %}
-    
-    {% if result.execution.error %}
-        {% include 'components/notifications/error_execution.html' %}
-    {% elif result.execution.message %}
-        <p>{{ result.execution.message }}</p>
-    {% elif result.execution.columns and result.execution.data %}
-        {% include 'components/results/tabs/table_result/data_table.html' %}
-    {% else %}
-        {% include 'components/notifications/note_no_results.html' %}
-    {% endif %}
+<div class="table-container">
+    <table>
+        <tr>
+            {% for col in result.execution.columns %}
+                <th>{{ col }}</th>
+            {% endfor %}
+        </tr>
+        {% for row in result.execution.data %}
+            <tr>
+                {% for val in row %}
+                    <td>{{ val }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
 </div>
