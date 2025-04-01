@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+
 function processSqlClauses(preElement) {
     const sql = preElement.textContent;
     const clauses = parseSqlClauses(sql);
@@ -49,6 +50,10 @@ function processSqlClauses(preElement) {
     preElement.innerHTML = clauses.map(clause =>
         `<span class="sql-clause" data-clause-type="${clause.type}" title="placeholder">${clause.text}</span>`
     ).join(' ');
+
+    // Add this to prevent text selection
+    preElement.style.userSelect = 'none';
+    preElement.style.webkitUserSelect = 'none';
 }
 
 function parseSqlClauses(sql) {

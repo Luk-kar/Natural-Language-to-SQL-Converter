@@ -79,27 +79,15 @@ tr:hover {
 }
 
 .sql-clause {
-    cursor: help;
     position: relative;
+    cursor: help;
     text-decoration: underline dotted rgba(0, 0, 0, 0.3);
+    -webkit-user-select: none; /* Disable text selection */
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .sql-clause:hover {
     background-color: rgba(255, 255, 0, 0.2);
-}
-
-/* Custom tooltip styling if needed (optional) */
-.sql-clause[title]:hover:after {
-    content: attr(title);
-    position: absolute;
-    background: #333;
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
 }
