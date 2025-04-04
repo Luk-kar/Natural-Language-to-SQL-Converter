@@ -1,4 +1,5 @@
 function initializeSqlInfoIcons() {
+
     document.querySelectorAll('.sql-info-icon').forEach(icon => {
         icon.addEventListener('click', function (e) {
             e.stopPropagation();
@@ -6,9 +7,11 @@ function initializeSqlInfoIcons() {
             if (pre) processSqlClauses(pre);
         });
     });
+
 }
 
 function initializeQueryExpansion() {
+
     document.querySelectorAll('.show-full-query').forEach(button => {
         button.addEventListener('click', function (e) {
             e.preventDefault();
@@ -32,9 +35,12 @@ function initializeQueryExpansion() {
             }
         });
     });
+
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+
     initializeSqlInfoIcons();
     initializeQueryExpansion();
+
 });

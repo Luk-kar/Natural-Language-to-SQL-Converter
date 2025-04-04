@@ -5,3 +5,5 @@ tree.txt
 .env
 .app
 functions.txt
+
+node_modules
