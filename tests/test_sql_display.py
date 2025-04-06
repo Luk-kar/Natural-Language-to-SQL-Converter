@@ -173,19 +173,68 @@ class TestSqlRenderingByLength(unittest.TestCase):
         self.assertNotIn("...", pre.text, "Should not add ellipsis for exact 200 chars")
 
 
+def upload_js_file() -> str:
+    """
+    Upload a JavaScript file and return its content.
+    """
+    js_path = os.path.join(
+        "app", "frontend", "static", "js", "sql_query_display", "sql_handler.js"
+    )
+    file_path = os.path.join(js_path)
+    with open(file_path, "r") as file:
+        js_content = file.read()
+    return js_content
+
+
 def get_alias_regex_line(js_content: str) -> str:
     """
-    Extract the alias regex line from the JavaScript content.
+    Extract the line containing the alias regex from the JavaScript content.
     """
-
+    # Define regex to match lines starting with optional spaces then "const aliasRegex" (case-insensitive)
     pattern = re.compile(r"^\s*const aliasRegex", re.IGNORECASE)
-
     for line in js_content.splitlines():
         if pattern.match(line):
-            _regex = line.split("=")[1].strip().replace(";", "")
-            return _regex
+            return line
 
     raise ValueError("Alias regex line not found in JavaScript content")
+
+
+def check_alias_regex(alias_regex: str) -> bool:
+    """
+    Check if the alias regex is valid.
+    """
+    js_content = upload_js_file()
+    alias_regex_line = get_alias_regex_line(js_content)
+
+    return bool(alias_regex in alias_regex_line)
+
+
+def check_window_start_regex(window_start_regex: str) -> bool:
+    """
+    Check if the window start regex is valid.
+    """
+    js_content = upload_js_file()
+    window_start_regex_line = extract_window_start_regex(js_content)
+
+    return bool(window_start_regex in window_start_regex_line)
+
+
+def check_sql_clauses(sql_clauses: str) -> bool:
+
+    pattern = re.compile(
+        r"const\s+list_clauses\s*=\s*\[(.*?)\];", re.DOTALL | re.IGNORECASE
+    )
+    js_content = upload_js_file()
+    match = pattern.search(js_content)
+    if not match:
+        raise ValueError("list_clauses not found in JS code")
+    list_clauses_line = match.group(1)
+
+    for clause in sql_clauses:
+        if not clause.replace("\\", "") in list_clauses_line.replace("\\", ""):
+            raise ValueError(
+                rf"Clause '{clause}' not found in list_clauses:\n{list_clauses_line}"
+            )
 
 
 def transform_clause(clause: str) -> str:
@@ -213,7 +262,6 @@ def extract_window_start_regex(js_content: str) -> str:
     window_start_regex = re.compile(r"\s+const windowStartRegex.+;", re.IGNORECASE)
     window_start_match = window_start_regex.search(js_content)
 
-    print(window_start_match)
     if not window_start_match:
         raise ValueError("windowStartRegex not found in JS code")
 
@@ -253,6 +301,9 @@ def split_sql(sql: str):
         "FETCH",
         "EXCLUDE",
     ]
+
+    check_sql_clauses(list_clauses)
+
     # Preserve order while removing duplicates.
     unique_clauses = list(dict.fromkeys(list_clauses))
     # Adjust clause patterns to include leading whitespace or start of string, and use a word boundary.
@@ -269,13 +320,21 @@ def split_sql_with_window_functions(sql: str):
     parts = []
     current_index = 0
     # Pattern to locate a window function start: function(...) OVER (
-    window_start_pattern = re.compile(
-        r"(\w+)\s*\([^)]*\)\s+OVER\s*\(", flags=re.IGNORECASE
-    )
+
+    window_start_regex = r"""(\w+)\s*\([^)]*\)\s+OVER\s*\("""
+
+    window_start_pattern = re.compile(window_start_regex, flags=re.IGNORECASE)
+
+    if not check_window_start_regex(window_start_regex):
+        raise ValueError("Window start regex is not valid")
+
+    alias_regex = r"""\s+AS\s+([\w_]+|"[^"]*"|'[^']*')\b"""
+
+    if not check_alias_regex(alias_regex):
+        raise ValueError("Alias regex is not valid")
+
     # Pattern to match an optional alias after the OVER clause.
-    alias_pattern = re.compile(
-        r'\s+AS\s+([\w_]+|"[^"]*"|\'[^\']*\')\b', flags=re.IGNORECASE
-    )
+    alias_pattern = re.compile(alias_regex, flags=re.IGNORECASE)
 
     while current_index < len(sql):
         match = window_start_pattern.search(sql, pos=current_index)
@@ -334,7 +393,9 @@ def parse_sql_clauses(sql: str):
 
 
 class TestSQLParsing(unittest.TestCase):
+
     def test_split_sql(self):
+
         # When SQL starts with a clause, the first element may be an empty string.
         sql = "SELECT a, b FROM table WHERE a = 1 ORDER BY a"
         parts = split_sql(sql)
@@ -343,12 +404,13 @@ class TestSQLParsing(unittest.TestCase):
         self.assertTrue(parts[0] == "" or parts[0].strip() == "SELECT")
         # Check that at least all keywords are present in the split.
         joined = " ".join(parts)
-        self.assertIn("SELECT", joined.upper())
-        self.assertIn("FROM", joined.upper())
-        self.assertIn("WHERE", joined.upper())
-        self.assertIn("ORDER BY", joined.upper())
+        self.assertIn("SELECT", joined)
+        self.assertIn("FROM", joined)
+        self.assertIn("WHERE", joined)
+        self.assertIn("ORDER BY", joined)
 
     def test_split_sql_with_window_functions(self):
+
         # SQL containing a window function.
         sql = "SELECT a, SUM(a) OVER (PARTITION BY id) AS sum_a FROM table"
         parts = split_sql_with_window_functions(sql)
@@ -357,17 +419,17 @@ class TestSQLParsing(unittest.TestCase):
         # 2. "SUM(a) OVER (PARTITION BY id) AS sum_a"
         # 3. " FROM table"
         self.assertEqual(len(parts), 3)
-        print("parts", parts[1])
         self.assertIn("SUM(a)", parts[1])
         self.assertIn("OVER (", parts[1])
         self.assertIn("AS sum_a", parts[1])
 
     def test_parse_sql_clauses_without_window(self):
+
         # SQL without window functions should be split by clauses.
         sql = "SELECT a, b FROM table WHERE a > 1 GROUP BY a HAVING COUNT(a) > 1"
         clauses = parse_sql_clauses(sql)
         # We expect multiple non-empty parts; check some keywords.
-        joined = " ".join(clauses).upper()
+        joined = " ".join(clauses)
         self.assertIn("SELECT", joined)
         self.assertIn("FROM", joined)
         self.assertIn("WHERE", joined)
@@ -375,6 +437,7 @@ class TestSQLParsing(unittest.TestCase):
         self.assertIn("HAVING", joined)
 
     def test_parse_sql_clauses_with_window(self):
+
         # SQL with window function and regular clauses.
         sql = (
             "SELECT a, SUM(a) OVER (PARTITION BY id) AS sum_a, "
@@ -387,7 +450,7 @@ class TestSQLParsing(unittest.TestCase):
         ]
         self.assertTrue(len(window_parts) >= 1)
         # And the remaining parts should contain other SQL clauses.
-        joined = " ".join(parts).upper()
+        joined = " ".join(parts)
         self.assertIn("SELECT", joined)
         self.assertIn("FROM", joined)
         self.assertIn("WHERE", joined)
