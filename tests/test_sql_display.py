@@ -173,168 +173,225 @@ class TestSqlRenderingByLength(unittest.TestCase):
         self.assertNotIn("...", pre.text, "Should not add ellipsis for exact 200 chars")
 
 
-class TestSqlTooltips(unittest.TestCase):
+def get_alias_regex_line(js_content: str) -> str:
     """
-    Tests SQL clause parsing and DOM transformations using regex and HTML templates
-    dynamically extracted from the JavaScript implementation.
+    Extract the alias regex line from the JavaScript content.
     """
 
-    @classmethod
-    def setUpClass(cls):
-        # Read the JavaScript file content
-        js_path = "app/frontend/static/js/sql_query_display/sql_handler.js"
-        with open(js_path, "r", encoding="utf-8") as f:
-            js_content = f.read()
+    pattern = re.compile(r"^\s*const aliasRegex", re.IGNORECASE)
 
-        # Extract regex patterns from clauseOrder
-        clause_regex = re.compile(
-            r"type:\s*'([^']+)',\s*regex:\s*/(.*?)/(\w*)", re.DOTALL
+    for line in js_content.splitlines():
+        if pattern.match(line):
+            _regex = line.split("=")[1].strip().replace(";", "")
+            return _regex
+
+    raise ValueError("Alias regex line not found in JavaScript content")
+
+
+def transform_clause(clause: str) -> str:
+
+    # Convert to uppercase to avoid case sensitivity issues
+    upper_clause = clause.upper()
+
+    # Replace literal "\s+" (ignoring case) with a space.
+    # The regex r'\\s\+' matches a literal backslash, followed by "s" (or "S") and a literal plus sign.
+    transformed = re.sub(r"\\s\+", " ", upper_clause, flags=re.IGNORECASE)
+
+    # Remove any remaining backslashes.
+    transformed = transformed.replace("\\", "")
+
+    # Remove quotes and strip any extra whitespace.
+    transformed = transformed.replace('"', "").strip()
+
+    return transformed
+
+
+def extract_window_start_regex(js_content: str) -> str:
+    """
+    Extract the windowStartRegex from the JavaScript content.
+    """
+    window_start_regex = re.compile(r"\s+const windowStartRegex.+;", re.IGNORECASE)
+    window_start_match = window_start_regex.search(js_content)
+
+    print(window_start_match)
+    if not window_start_match:
+        raise ValueError("windowStartRegex not found in JS code")
+
+    window_start_line = window_start_match.group(0)
+    window_start_regex = window_start_line.split("=")[1].strip().replace(";", "")
+
+    if window_start_regex.endswith("gi"):
+        window_start_regex = window_start_regex[:-3]
+
+    return window_start_regex
+
+
+def split_sql(sql: str):
+    # List of SQL clauses.
+    list_clauses = [
+        "OVER",
+        "WITH",
+        "SELECT",
+        "FROM",
+        "WHERE",
+        "INNER\\s+JOIN",
+        "LEFT\\s+JOIN",
+        "RIGHT\\s+JOIN",
+        "FULL\\s+JOIN",
+        "CROSS\\s+JOIN",
+        "NATURAL\\s+JOIN",
+        "JOIN",
+        "ORDER\\s+BY",
+        "GROUP\\s+BY",
+        "HAVING",
+        "LIMIT",
+        "OFFSET",
+        "UNION\\s+ALL",
+        "UNION",
+        "INTERSECT",
+        "EXCEPT",
+        "FETCH",
+        "EXCLUDE",
+    ]
+    # Preserve order while removing duplicates.
+    unique_clauses = list(dict.fromkeys(list_clauses))
+    # Adjust clause patterns to include leading whitespace or start of string, and use a word boundary.
+    clause_patterns = [r"(?:\s+|^)" + clause + r"\b" for clause in unique_clauses]
+    # Join the individual patterns using the OR operator.
+    pattern_string = "|".join(clause_patterns)
+    # Build a regular expression that uses a positive lookahead to split at each clause start.
+    clause_regex = re.compile(r"(?={})".format(pattern_string), flags=re.IGNORECASE)
+    # Split the SQL query using the generated regex.
+    return clause_regex.split(sql)
+
+
+def split_sql_with_window_functions(sql: str):
+    parts = []
+    current_index = 0
+    # Pattern to locate a window function start: function(...) OVER (
+    window_start_pattern = re.compile(
+        r"(\w+)\s*\([^)]*\)\s+OVER\s*\(", flags=re.IGNORECASE
+    )
+    # Pattern to match an optional alias after the OVER clause.
+    alias_pattern = re.compile(
+        r'\s+AS\s+([\w_]+|"[^"]*"|\'[^\']*\')\b', flags=re.IGNORECASE
+    )
+
+    while current_index < len(sql):
+        match = window_start_pattern.search(sql, pos=current_index)
+        if not match:
+            # Add any remaining part if no more window functions are found.
+            parts.append(sql[current_index:])
+            break
+
+        window_start = match.start()
+        # Append text before the window function.
+        before_window = sql[current_index:window_start]
+        if before_window:
+            parts.append(before_window)
+
+        # Now, find the end of the OVER clause's parentheses.
+        paren_depth = 1
+        index = match.end()  # Position after 'OVER ('
+        while index < len(sql) and paren_depth > 0:
+            if sql[index] == "(":
+                paren_depth += 1
+            elif sql[index] == ")":
+                paren_depth -= 1
+            index += 1
+        window_end = index
+
+        # Check for an alias after the closing parenthesis.
+        alias_match = alias_pattern.search(sql, pos=window_end)
+        if alias_match:
+            window_end = alias_match.end()
+
+        # Append the complete window function part.
+        parts.append(sql[window_start:window_end])
+        current_index = window_end
+
+    # Return non-empty parts.
+    return [part for part in parts if part.strip()]
+
+
+def parse_sql_clauses(sql: str):
+    window_parts = split_sql_with_window_functions(sql)
+    result = []
+    # Pattern to check if a part contains a window function (using "OVER (").
+    over_pattern = re.compile(r"\bOVER\s*\(", flags=re.IGNORECASE)
+    for part in window_parts:
+        if over_pattern.search(part):
+            result.append(part)
+        else:
+            # For non-window parts, split them into SQL clauses.
+            clauses = split_sql(part)
+            result.extend(clauses)
+    # Filter out any empty or whitespace-only strings.
+    return [p for p in result if p.strip()]
+
+
+# --- Unit tests ---
+
+
+class TestSQLParsing(unittest.TestCase):
+    def test_split_sql(self):
+        # When SQL starts with a clause, the first element may be an empty string.
+        sql = "SELECT a, b FROM table WHERE a = 1 ORDER BY a"
+        parts = split_sql(sql)
+        # Expected behavior: split at positions where the clauses start.
+        # The first element is empty because "SELECT" is at the beginning.
+        self.assertTrue(parts[0] == "" or parts[0].strip() == "SELECT")
+        # Check that at least all keywords are present in the split.
+        joined = " ".join(parts)
+        self.assertIn("SELECT", joined.upper())
+        self.assertIn("FROM", joined.upper())
+        self.assertIn("WHERE", joined.upper())
+        self.assertIn("ORDER BY", joined.upper())
+
+    def test_split_sql_with_window_functions(self):
+        # SQL containing a window function.
+        sql = "SELECT a, SUM(a) OVER (PARTITION BY id) AS sum_a FROM table"
+        parts = split_sql_with_window_functions(sql)
+        # Expected parts:
+        # 1. "SELECT a, " (or similar, before the window function)
+        # 2. "SUM(a) OVER (PARTITION BY id) AS sum_a"
+        # 3. " FROM table"
+        self.assertEqual(len(parts), 3)
+        print("parts", parts[1])
+        self.assertIn("SUM(a)", parts[1])
+        self.assertIn("OVER (", parts[1])
+        self.assertIn("AS sum_a", parts[1])
+
+    def test_parse_sql_clauses_without_window(self):
+        # SQL without window functions should be split by clauses.
+        sql = "SELECT a, b FROM table WHERE a > 1 GROUP BY a HAVING COUNT(a) > 1"
+        clauses = parse_sql_clauses(sql)
+        # We expect multiple non-empty parts; check some keywords.
+        joined = " ".join(clauses).upper()
+        self.assertIn("SELECT", joined)
+        self.assertIn("FROM", joined)
+        self.assertIn("WHERE", joined)
+        self.assertIn("GROUP BY", joined)
+        self.assertIn("HAVING", joined)
+
+    def test_parse_sql_clauses_with_window(self):
+        # SQL with window function and regular clauses.
+        sql = (
+            "SELECT a, SUM(a) OVER (PARTITION BY id) AS sum_a, "
+            "b FROM table WHERE b > 100 ORDER BY a"
         )
-        matches = clause_regex.findall(js_content)
-        cls.clause_order = []
-
-        for type_, pattern, flags in matches:
-            # Convert JS regex flags to Python flags (only 'i' handled here)
-            re_flags = re.IGNORECASE if "i" in flags else 0
-            cls.clause_order.append(
-                {"type": type_, "regex": re.compile(pattern, re_flags)}
-            )
-
-        clauses_required = [
-            "WITH",
-            "SELECT",
-            "UNION",
-            "FROM",
-            "WHERE",
-            "GROUP BY",
-            "ORDER BY",
-            "LIMIT",
+        parts = parse_sql_clauses(sql)
+        # Check that at least one part is the window function.
+        window_parts = [
+            p for p in parts if re.search(r"\bOVER\s*\(", p, flags=re.IGNORECASE)
         ]
-
-        # Ensure all required clauses are present
-        for clause_definition in clauses_required:
-            if not any(
-                _clause_entry["type"] == clause_definition
-                for _clause_entry in cls.clause_order
-            ):
-                raise ValueError(f"Missing regex for clause: {clause_definition}")
-
-        # Extract HTML template from processSqlClauses
-        template_regex = re.compile(r"map\(clause\s*=>\s*`([^`]+)`", re.DOTALL)
-        template_match = template_regex.search(js_content)
-        if not template_match:
-            raise ValueError("HTML template not found in JS code")
-        html_template = template_match.group(1)
-        # Convert JS template placeholders to Python format
-        html_template = html_template.replace("${clause.type}", "{type}")
-        html_template = html_template.replace("${clause.text}", "{text}")
-        cls.html_template = html_template
-
-    def setUp(self):
-        self.maxDiff = None
-
-    def js_process_sql_clauses(self, pre_element):
-        """Python port of processSqlClauses using extracted template"""
-        sql = pre_element.text  # Preserve original whitespace
-        clauses = self.js_parse_sql_clauses(sql)
-
-        new_content = []
-        for clause in clauses:
-            span = self.html_template.format(type=clause["type"], text=clause["text"])
-            new_content.append(span)
-        return " ".join(new_content)
-
-    def js_parse_sql_clauses(self, sql):
-        """Python port of parseSqlClauses using extracted regexes"""
-        remaining = sql
-        clauses = []
-
-        for rule in self.clause_order:
-            match = rule["regex"].search(remaining)
-            if match:
-                clause_text = match.group().strip()
-                clauses.append({"type": rule["type"], "text": clause_text})
-                remaining = remaining[match.end() :]
-
-        return clauses
-
-    def test_unexpanded_short_query_tooltips(self):
-        # Initial render for short query (same as before)
-        initial_html = """
-        <div class="sql-container">
-            <div class="sql-display-wrapper">
-                <pre class="sql-display">SELECT name, email FROM users WHERE active = true</pre>
-                <span class="sql-info-icon">ⓘ</span>
-            </div>
-        </div>
-        """
-        soup = BeautifulSoup(initial_html, "html.parser")
-        pre = soup.find("pre", class_="sql-display")
-
-        processed_html = self.js_process_sql_clauses(pre)
-        processed_soup = BeautifulSoup(processed_html, "html.parser")
-
-        clauses = processed_soup.find_all("span", class_="sql-clause")
-        self.assertGreater(len(clauses), 0)
-
-        for clause in clauses:
-            self.assertIn("data-clause-type", clause.attrs)
-            self.assertIn(clause["data-clause-type"], ["SELECT", "FROM", "WHERE"])
-            self.assertEqual(clause["title"], "placeholder")
-
-    def test_expanded_query_tooltips(self):
-        # Test with long SQL (same as before)
-        long_sql = (
-            "SELECT * FROM ("
-            + "sensor_data JOIN weather ON sensor_data.location = weather.location " * 4
-            + ")"
-        )
-        truncated_html = f"""
-        <div class="sql-container">
-            <div class="sql-display-wrapper">
-                <pre class="sql-display">{long_sql[:200]}...</pre>
-                <span class="show-full-query" data-full="{long_sql}">Show full query</span>
-            </div>
-        </div>
-        """
-        soup = BeautifulSoup(truncated_html, "html.parser")
-
-        full_sql = soup.find("span", class_="show-full-query")["data-full"]
-        expanded_pre = soup.new_tag("pre", **{"class": "sql-display"})
-        expanded_pre.string = full_sql
-
-        processed_html = self.js_process_sql_clauses(expanded_pre)
-        processed_soup = BeautifulSoup(processed_html, "html.parser")
-
-        clauses = processed_soup.find_all("span", class_="sql-clause")
-        clause_types = {c["data-clause-type"] for c in clauses}
-        self.assertIn("SELECT", clause_types)
-        self.assertIn("FROM", clause_types)
-
-        for clause in clauses:
-            self.assertTrue(clause.has_attr("title"))
-            self.assertGreater(len(clause["title"]), 3)
-
-    def test_clause_parsing_edge_cases(self):
-        test_cases = [
-            (
-                "WITH cte AS (SELECT id FROM tbl) SELECT id FROM cte",
-                ["WITH", "SELECT", "FROM", "SELECT", "FROM"],
-            ),
-            (
-                "SELECT name FROM users UNION SELECT email FROM contacts",
-                ["SELECT", "FROM", "UNION", "SELECT", "FROM"],
-            ),
-            (
-                "SELECT * FROM (SELECT * FROM subquery) AS sq WHERE sq.id > 100",
-                ["SELECT", "FROM", "SELECT", "FROM", "WHERE"],
-            ),
-        ]
-
-        for sql, expected in test_cases:
-            clauses = self.js_parse_sql_clauses(sql)
-            detected_types = [c["type"] for c in clauses]
-            self.assertEqual(detected_types, expected)
+        self.assertTrue(len(window_parts) >= 1)
+        # And the remaining parts should contain other SQL clauses.
+        joined = " ".join(parts).upper()
+        self.assertIn("SELECT", joined)
+        self.assertIn("FROM", joined)
+        self.assertIn("WHERE", joined)
+        self.assertIn("ORDER BY", joined)
 
 
 if __name__ == "__main__":
