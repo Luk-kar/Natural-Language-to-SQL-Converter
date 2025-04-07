@@ -130,15 +130,32 @@ def generate_plots():
 
 @flask_app.route("/generate_clause_explanation", methods=["POST"])
 def generate_clause_explanation():
+
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+
     data = request.get_json()
+    # Validate presence of required fields
+    required_fields = ["clause", "fullSql", "clauseId"]
+    missing = [field for field in required_fields if field not in data]
+
+    if missing:
+        return jsonify({"error": f"Missing required fields: {missing}"}), 400
+
+    # Validate field types
+    if not isinstance(data["clauseId"], (str, int)):
+        return jsonify({"error": "clauseId must be string or integer"}), 400
+
     try:
         clause = data["clause"]
         full_sql = data["fullSql"]
         clause_id = data["clauseId"]
 
         response = generate_clause_explanation_response(clause, full_sql)
+
         explanation = response["choices"][0]["text"].strip()
 
         return jsonify({"clauseId": clause_id, "explanation": explanation})
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
