@@ -45,17 +45,16 @@
     display: block;
     width: 100%;
 }
-
-.sql-clause {
-    position: relative;
-    cursor: help;
-    text-decoration: underline dotted rgba(0, 0, 0, 0.3);
-    -webkit-user-select: none; /* Disable text selection */
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
+.sql-clause[title]:not([title="Loading..."]) {
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
 .sql-clause:hover {
-    background-color: rgba(255, 255, 0, 0.2);
+    background-color: rgba(255, 235, 59, 0.3);
+}
+
+.sql-clause[title="Loading..."] {
+    cursor: wait;
+    opacity: 0.8;
 }

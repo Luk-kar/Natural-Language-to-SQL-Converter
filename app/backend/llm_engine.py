@@ -177,3 +177,18 @@ def create_chart_dictionary(prompt: str) -> dict:
         error_message += str(response)
 
     raise ValueError(error_message)
+
+
+def generate_clause_explanation_response(clause, full_sql):
+    """
+    Generate an explanation for a specific clause in the SQL query using LLM.
+    """
+
+    prompt = f"""Given this SQL query:
+{full_sql}
+Explain this specific part of the query: 
+'{clause}'
+Keep the explanation concise (1-2 sentences) and focus on its role in the overall query. Use simple language."""
+
+    response = LLM.create_completion(prompt=prompt, temperature=0.4)
+    return response

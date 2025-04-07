@@ -1,6 +1,6 @@
 <div class="sql-container">
     <div class="sql-display-wrapper">
-        <pre class="sql-display">
+        <pre class="sql-display" data-full-sql="{{ result.sql }}">
             {%- if result.sql|length > 200 -%}
                 {{ result.sql[:200] }}...
             {%- else -%}

@@ -15,6 +15,7 @@ from app.backend.database import get_schema, execute_query, DB_CONFIG
 from app.backend.llm_engine import (
     generate_sql,
     generate_describe,
+    generate_clause_explanation_response,
     MODEL_NAME,
 )
 
@@ -127,6 +128,17 @@ def generate_plots():
     return generate_visualization_artifacts(execution)
 
 
-@flask_app.route("/generate_tooltip")
-def generate_tooltip():
-    pass
+@flask_app.route("/generate_clause_explanation", methods=["POST"])
+def generate_clause_explanation():
+    data = request.get_json()
+    try:
+        clause = data["clause"]
+        full_sql = data["fullSql"]
+        clause_id = data["clauseId"]
+
+        response = generate_clause_explanation_response(clause, full_sql)
+        explanation = response["choices"][0]["text"].strip()
+
+        return jsonify({"clauseId": clause_id, "explanation": explanation})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

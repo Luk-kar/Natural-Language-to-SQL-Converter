@@ -1,26 +1,18 @@
 /**
- * Processes an HTML element containing SQL text by parsing it into clauses and wrapping each clause in a span.
- *
- * The function extracts the SQL content from the provided preformatted HTML element, splits the SQL into
- * clauses using the extractSqlClausesWithWindows function, and then rebuilds the element's innerHTML such that each clause
- * is wrapped in a span element with a default clause type of "CLAUSE". It also disables text selection on the element.
- *
+ 
  * @param {HTMLElement} preElement - The HTML element (typically a <pre> element) containing the SQL query text.
  */
 function wrapSqlClausesInHtml(preElement) {
-    const sql = preElement.textContent;
-
+    const sql = preElement.dataset.fullSql;
     const clauses = extractSqlClausesWithWindows(sql);
 
-    // Clear existing content and rebuild by mapping each clause string
-    preElement.innerHTML = clauses.map(clause => {
+    preElement.innerHTML = clauses.map((clause, index) => {
+        return `<span class="sql-clause" 
+                      data-clause-id="${index}" 
+                      data-clause-type="CLAUSE" 
+                      title="Loading...">${clause}</span>`;
+    }).join('');
 
-        // Wrap each clause string in a span element.
-        // A default type "CLAUSE" is used in data-clause-type.
-        return `<span class="sql-clause" data-clause-type="CLAUSE" title="placeholder">${clause}</span>`;
-    }).join(''); // Join without adding extra spaces
-
-    // Prevent text selection on these spans
     preElement.style.userSelect = 'none';
     preElement.style.webkitUserSelect = 'none';
 }
