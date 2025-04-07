@@ -173,6 +173,9 @@ class TestSqlRenderingByLength(unittest.TestCase):
         self.assertNotIn("...", pre.text, "Should not add ellipsis for exact 200 chars")
 
 
+# --- SQL Parsing Logic ---
+
+
 def upload_js_file() -> str:
     """
     Upload a JavaScript file and return its content.
@@ -180,9 +183,12 @@ def upload_js_file() -> str:
     js_path = os.path.join(
         "app", "frontend", "static", "js", "sql_query_display", "sql_handler.js"
     )
+
     file_path = os.path.join(js_path)
+
     with open(file_path, "r") as file:
         js_content = file.read()
+
     return js_content
 
 
@@ -462,6 +468,33 @@ class TestSQLParsing(unittest.TestCase):
         self.assertIn("FROM", parts[3])
         self.assertIn("WHERE", parts[4])
         self.assertIn("ORDER BY", parts[5])
+
+
+class TestJsFileContent(unittest.TestCase):
+    def test_wrapSqlClausesInHtml_contains_span(self):
+        """
+        Test that the uploaded JavaScript file content contains the expected span element
+        used in the wrapSqlClausesInHtml function.
+        """
+        js_content = upload_js_file()
+
+        wrapSqlClausesInHtml_regex = re.compile(
+            r"function\s+wrapSqlClausesInHtml\s*\(\s*preElement\s*\)\s*\{([\s\S]*?)\n\}",
+            re.MULTILINE,
+        )
+
+        match = wrapSqlClausesInHtml_regex.search(js_content)
+        wrapSqlClausesInHtml = match.group(0) if match else None
+
+        self.assertIsNotNone(
+            wrapSqlClausesInHtml, "wrapSqlClausesInHtml function not found in JS file"
+        )
+
+        self.assertIn(
+            '<span class="sql-clause',
+            wrapSqlClausesInHtml,
+            "wrapSqlClausesInHtml function does not contain the expected span element",
+        )
 
 
 if __name__ == "__main__":

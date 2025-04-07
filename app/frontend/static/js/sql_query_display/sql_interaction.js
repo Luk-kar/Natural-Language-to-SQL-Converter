@@ -4,7 +4,7 @@ function initializeSqlInfoIcons() {
         icon.addEventListener('click', function (e) {
             e.stopPropagation();
             const pre = this.closest('.sql-display-wrapper').querySelector('.sql-display');
-            if (pre) processSqlClauses(pre);
+            if (pre) wrapSqlClausesInHtml(pre);
         });
     });
 
@@ -27,7 +27,7 @@ function initializeQueryExpansion() {
                 infoIcon.className = 'sql-info-icon';
                 infoIcon.addEventListener('click', function (e) {
                     e.stopPropagation();
-                    processSqlClauses(pre);
+                    wrapSqlClausesInHtml(pre);
                 });
 
                 const wrapper = sqlContainer.querySelector('.sql-display-wrapper');

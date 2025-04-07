@@ -1,10 +1,20 @@
-function processSqlClauses(preElement) {
+/**
+ * Processes an HTML element containing SQL text by parsing it into clauses and wrapping each clause in a span.
+ *
+ * The function extracts the SQL content from the provided preformatted HTML element, splits the SQL into
+ * clauses using the extractSqlClausesWithWindows function, and then rebuilds the element's innerHTML such that each clause
+ * is wrapped in a span element with a default clause type of "CLAUSE". It also disables text selection on the element.
+ *
+ * @param {HTMLElement} preElement - The HTML element (typically a <pre> element) containing the SQL query text.
+ */
+function wrapSqlClausesInHtml(preElement) {
     const sql = preElement.textContent;
-    // parseSqlClauses now returns an array of strings.
-    const clauses = parseSqlClauses(sql);
+
+    const clauses = extractSqlClausesWithWindows(sql);
 
     // Clear existing content and rebuild by mapping each clause string
     preElement.innerHTML = clauses.map(clause => {
+
         // Wrap each clause string in a span element.
         // A default type "CLAUSE" is used in data-clause-type.
         return `<span class="sql-clause" data-clause-type="CLAUSE" title="placeholder">${clause}</span>`;
@@ -15,8 +25,8 @@ function processSqlClauses(preElement) {
     preElement.style.webkitUserSelect = 'none';
 }
 
-function splitSQL(sql) {
-    // List of SQL clauses
+function splitSqlByClauses(sql) {
+
     const list_clauses = [
         "OVER", "WITH", "SELECT", "FROM", "WHERE", "INNER\\s+JOIN", "LEFT\\s+JOIN", "RIGHT\\s+JOIN",
         "FULL\\s+JOIN", "CROSS\\s+JOIN", "NATURAL\\s+JOIN", "JOIN", "ORDER\\s+BY", "GROUP\\s+BY",
@@ -39,15 +49,28 @@ function splitSQL(sql) {
     return sql.split(clauseRegex);
 }
 
-function splitSQLWithWindowFunctions(sql) {
+/**
+ * Splits an SQL query string into an array of clauses based on a set of SQL keywords.
+ *
+ * The function defines a list of common SQL clauses and generates a regular expression pattern to split
+ * the SQL query string at each occurrence of these clauses. It handles potential whitespace issues by
+ * including leading whitespace or the start of the string in the pattern.
+ *
+ * @param {string} sql - The SQL query string to be split into clauses.
+ * @returns {string[]} An array of SQL clause strings.
+ */
+function splitSqlWithWindowHandling(sql) {
+
     const parts = [];
     let currentIndex = 0;
 
     while (currentIndex < sql.length) {
+
         // Look for the pattern: function(...) OVER (
         const windowStartRegex = /(\w+)\s*\([^)]*\)\s+OVER\s*\(/gi;
         const match = windowStartRegex.exec(sql.slice(currentIndex));
         if (!match) {
+
             // Add remaining part if no more window functions
             parts.push(sql.slice(currentIndex));
             break;
@@ -86,8 +109,20 @@ function splitSQLWithWindowFunctions(sql) {
     return parts.filter(part => part.trim() !== '');
 }
 
-function parseSqlClauses(sql) {
-    const windowParts = splitSQLWithWindowFunctions(sql);
+/**
+ * Splits an SQL query string into parts, specifically handling window functions separately.
+ *
+ * This function iterates over the SQL query and searches for window function patterns (i.e., functions
+ * followed by an OVER clause). It isolates the window function, including any alias (AS ...), and collects
+ * all parts of the SQL query accordingly. It returns an array of SQL string parts where each part is either
+ * a window function or a regular clause segment.
+ *
+ * @param {string} sql - The SQL query string that may include window functions.
+ * @returns {string[]} An array of SQL string parts, each representing a window function or a clause segment.
+ */
+function extractSqlClausesWithWindows(sql) {
+
+    const windowParts = splitSqlWithWindowHandling(sql);
 
     let result = [];
     for (const part of windowParts) {
@@ -96,7 +131,7 @@ function parseSqlClauses(sql) {
             result.push(part);
         } else {
             // Split the non-window part into SQL clauses
-            const clauses = splitSQL(part);
+            const clauses = splitSqlByClauses(part);
             result.push(...clauses);
         }
     }
