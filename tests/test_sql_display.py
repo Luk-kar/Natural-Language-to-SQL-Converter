@@ -313,7 +313,11 @@ def split_sql(sql: str):
     # Build a regular expression that uses a positive lookahead to split at each clause start.
     clause_regex = re.compile(r"(?={})".format(pattern_string), flags=re.IGNORECASE)
     # Split the SQL query using the generated regex.
-    return clause_regex.split(sql)
+    splitted_clauses = clause_regex.split(sql)
+    # Remove any empty strings
+    no_empty_strings_clauses = [clause for clause in splitted_clauses if clause.strip()]
+
+    return no_empty_strings_clauses
 
 
 def split_sql_with_window_functions(sql: str):
@@ -385,6 +389,7 @@ def parse_sql_clauses(sql: str):
             # For non-window parts, split them into SQL clauses.
             clauses = split_sql(part)
             result.extend(clauses)
+
     # Filter out any empty or whitespace-only strings.
     return [p for p in result if p.strip()]
 
@@ -401,13 +406,11 @@ class TestSQLParsing(unittest.TestCase):
         parts = split_sql(sql)
         # Expected behavior: split at positions where the clauses start.
         # The first element is empty because "SELECT" is at the beginning.
-        self.assertTrue(parts[0] == "" or parts[0].strip() == "SELECT")
-        # Check that at least all keywords are present in the split.
-        joined = " ".join(parts)
-        self.assertIn("SELECT", joined)
-        self.assertIn("FROM", joined)
-        self.assertIn("WHERE", joined)
-        self.assertIn("ORDER BY", joined)
+
+        self.assertIn("SELECT", parts[0])
+        self.assertIn("FROM", parts[1])
+        self.assertIn("WHERE", parts[2])
+        self.assertIn("ORDER BY", parts[3])
 
     def test_split_sql_with_window_functions(self):
 
@@ -427,14 +430,14 @@ class TestSQLParsing(unittest.TestCase):
 
         # SQL without window functions should be split by clauses.
         sql = "SELECT a, b FROM table WHERE a > 1 GROUP BY a HAVING COUNT(a) > 1"
-        clauses = parse_sql_clauses(sql)
+        parts = parse_sql_clauses(sql)
+
         # We expect multiple non-empty parts; check some keywords.
-        joined = " ".join(clauses)
-        self.assertIn("SELECT", joined)
-        self.assertIn("FROM", joined)
-        self.assertIn("WHERE", joined)
-        self.assertIn("GROUP BY", joined)
-        self.assertIn("HAVING", joined)
+        self.assertEqual("SELECT a, b", parts[0])
+        self.assertEqual(" FROM table", parts[1])
+        self.assertEqual(" WHERE a > 1", parts[2])
+        self.assertEqual(" GROUP BY a", parts[3])
+        self.assertEqual(" HAVING COUNT(a) > 1", parts[4])
 
     def test_parse_sql_clauses_with_window(self):
 
@@ -444,17 +447,21 @@ class TestSQLParsing(unittest.TestCase):
             "b FROM table WHERE b > 100 ORDER BY a"
         )
         parts = parse_sql_clauses(sql)
+
         # Check that at least one part is the window function.
         window_parts = [
             p for p in parts if re.search(r"\bOVER\s*\(", p, flags=re.IGNORECASE)
         ]
         self.assertTrue(len(window_parts) >= 1)
+
         # And the remaining parts should contain other SQL clauses.
-        joined = " ".join(parts)
-        self.assertIn("SELECT", joined)
-        self.assertIn("FROM", joined)
-        self.assertIn("WHERE", joined)
-        self.assertIn("ORDER BY", joined)
+        self.assertIn("SELECT", parts[0])
+        self.assertTrue(
+            all(keyword in parts[1] for keyword in ["OVER", "PARTITION BY"])
+        )
+        self.assertIn("FROM", parts[3])
+        self.assertIn("WHERE", parts[4])
+        self.assertIn("ORDER BY", parts[5])
 
 
 if __name__ == "__main__":
