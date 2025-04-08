@@ -151,9 +151,7 @@ def generate_clause_explanation():
         full_sql = data["fullSql"]
         clause_id = data["clauseId"]
 
-        response = generate_clause_explanation_response(clause, full_sql)
-
-        explanation = response["choices"][0]["text"].strip()
+        explanation = generate_clause_explanation_response(clause, full_sql)
 
         return jsonify({"clauseId": clause_id, "explanation": explanation})
 

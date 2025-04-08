@@ -184,6 +184,18 @@ def generate_clause_explanation_response(clause, full_sql):
     Generate an explanation for a specific clause in the SQL query using LLM.
     """
 
+    if not isinstance(clause, str) or not clause:
+        raise ValueError(
+            "Clause cannot be empty non-empty string.\nProvide meaningful SQL segment. The segment:\n"
+            + str(clause)
+        )
+
+    if not isinstance(full_sql, str) or not full_sql:
+        raise ValueError(
+            "Full SQL cannot be empty non-empty string.\nnProvide full context.\nThe full SQL:\n"
+            + str(full_sql)
+        )
+
     prompt = f"""Given this SQL query:
 {full_sql}
 Explain this specific part of the query: 
@@ -191,4 +203,55 @@ Explain this specific part of the query:
 Keep the explanation concise (1-2 sentences) and focus on its role in the overall query. Use simple language."""
 
     response = LLM.create_completion(prompt=prompt, temperature=0.4)
-    return response
+
+    explanation = response["choices"][0]["text"].strip()
+
+    # Remove code blocks from the explanation
+    pattern = r"```.*```"
+
+    no_code_base = re.sub(
+        pattern,
+        "",
+        explanation,
+        flags=re.DOTALL,
+    )
+
+    # Remove unwanted prefixes
+    unwanted_prefixes = [
+        "Explanation",
+        "Answer",
+        "Response",
+        "Result",
+        "Summary",
+        "Description",
+        "Insight",
+        "Analysis",
+        "Commentary",
+        "Note",
+        "Observation",
+        "Remark",
+        "Feedback",
+        "Interpretation",
+        "Clarification",
+        "Definition",
+        "Elaboration",
+        "Conclusion",
+    ]
+
+    pattern = rf"^\s*\**({'|'.join(unwanted_prefixes)})[^A-Za-z0-9]*"
+
+    no_prefixes = re.sub(
+        pattern,
+        "",
+        no_code_base,
+        flags=re.IGNORECASE,
+    )
+
+    # Add ... to the end if the answer is more than 1500 characters
+    if len(no_prefixes) > 1500:
+        response_truncation = "..."
+        no_prefixes = (
+            no_prefixes[: 1500 - len(response_truncation)] + response_truncation
+        )
+
+    return no_prefixes.strip()

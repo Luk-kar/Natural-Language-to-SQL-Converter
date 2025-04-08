@@ -32,6 +32,7 @@ from app.backend.llm_engine import (
     generate_sql,
     generate_describe,
     create_chart_dictionary,
+    generate_clause_explanation_response,
 )
 
 
@@ -329,6 +330,111 @@ class TestChartDictionaryResponses(unittest.TestCase):
         if result["plot_type"] == "plot_bar":
             self.assertIn("category_column", result["arguments"])
             self.assertIn("value_column", result["arguments"])
+
+
+class TestGenerateClauseExplanationResponse(unittest.TestCase):
+    """
+    Test suite for LLM-powered SQL clause explanation generation.
+
+    Validates:
+    - Correct prompt construction from clause/SQL components
+    - Input validation for empty clause or SQL query
+    - Proper handling of LLM responses
+    - Error propagation for invalid inputs
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        """Initialize LLM instance for all tests."""
+        get_llm()
+
+    @patch("app.backend.llm_engine.LLM.create_completion")
+    def test_valid_clause_explanation(self, mock_llm):
+        """Test successful explanation generation with valid inputs."""
+
+        # Configure mock
+        mock_response = {"choices": [{"text": "Filters users older than 30"}]}
+        mock_llm.return_value = mock_response
+
+        # Test inputs
+        clause = "WHERE age > 30"
+        full_sql = "SELECT name FROM users WHERE age > 30;"
+
+        # Generate explanation
+        result = generate_clause_explanation_response(clause, full_sql)
+
+        # Validate prompt construction
+        expected_prompt = f"""Given this SQL query:
+{full_sql}
+Explain this specific part of the query: 
+'{clause}'
+Keep the explanation concise (1-2 sentences) and focus on its role in the overall query. Use simple language."""
+        mock_llm.assert_called_once_with(prompt=expected_prompt, temperature=0.4)
+
+        # Validate response handling
+        self.assertIsInstance(result, str)
+        self.assertGreater(len(result.strip()), 0)
+        self.assertNotIn("SELECT", result.upper())
+
+    def test_empty_clause_validation(self):
+        """Test empty clause raises descriptive error."""
+
+        with self.assertRaises(ValueError) as context:
+            generate_clause_explanation_response("", "SELECT * FROM users")
+
+        self.assertIn("Clause cannot be empty".lower(), str(context.exception).lower())
+        self.assertIn(
+            "provide meaningful SQL segment".lower(), str(context.exception).lower()
+        )
+
+    def test_empty_sql_validation(self):
+        """Test empty SQL query raises context-aware error."""
+
+        with self.assertRaises(ValueError) as context:
+            generate_clause_explanation_response("SELECT *", "")
+
+        self.assertIn(
+            "full sql cannot be empty non-empty string".lower(),
+            str(context.exception).lower(),
+        )
+        self.assertIn("Provide full context".lower(), str(context.exception).lower())
+
+    @patch("app.backend.llm_engine.LLM.create_completion")
+    def test_response_format_handling(self, mock_llm):
+        """Test handling of various LLM response formats."""
+
+        # Test markdown stripping
+        mock_llm.return_value = {
+            "choices": [{"text": "**Explanation**: This does something"}]
+        }
+
+        result = generate_clause_explanation_response(
+            "FROM table", "SELECT * FROM table"
+        )
+        self.assertNotIn("**Explanation**", result)
+
+        # Test code block handling
+        mock_llm.return_value = {
+            "choices": [
+                {"text": "```\nThis is a code block\n``` And some explanations"}
+            ]
+        }
+
+        result = generate_clause_explanation_response(
+            "JOIN users", "SELECT * FROM orders JOIN users"
+        )
+        self.assertNotIn("```", result)
+
+    @patch("app.backend.llm_engine.LLM.create_completion")
+    def test_long_response_truncation(self, mock_llm):
+        """Test excessive response length handling."""
+
+        mock_llm.return_value = {"choices": [{"text": "1234567890" * 151}]}
+
+        result = generate_clause_explanation_response(
+            "LIMIT 10", "SELECT * FROM logs LIMIT 10"
+        )
+        self.assertEquals(len(result), 1500)
 
 
 if __name__ == "__main__":
