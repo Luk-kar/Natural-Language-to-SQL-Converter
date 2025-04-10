@@ -6,7 +6,10 @@ function initializeSqlInfoIcons() {
             const pre = this.closest('.sql-display-wrapper').querySelector('.sql-display');
             if (pre) {
                 wrapSqlClausesInHtml(pre);
-                fetchClauseExplanations(pre);
+                showLoadingOverlay();
+                fetchClauseExplanations(pre)
+                    .catch(error => console.error('Error:', error))
+                    .finally(() => hideLoadingOverlay());
             };
         });
     });
@@ -45,11 +48,12 @@ function fetchClauseExplanations(preElement) {
     const clauses = preElement.querySelectorAll('.sql-clause');
     const fullSql = preElement.dataset.fullSql;
 
+    const promises = [];
     clauses.forEach(clauseElement => {
         const clauseId = clauseElement.dataset.clauseId;
         const clauseText = clauseElement.textContent;
 
-        fetch('/generate_clause_explanation', {
+        const promise = fetch('/generate_clause_explanation', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -66,7 +70,11 @@ function fetchClauseExplanations(preElement) {
                 }
             })
             .catch(error => console.error('Error:', error));
+
+        promises.push(promise);
     });
+
+    return Promise.all(promises);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
