@@ -6,6 +6,7 @@
     <link href="https://cdn.bokeh.org/bokeh/release/bokeh-3.4.3.min.css" rel="stylesheet">
     <link href="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.4.3.min.css" rel="stylesheet">
     <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/body.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/notifications.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/buttons.css') }}">
@@ -14,6 +15,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/tables.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/sql_query.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/tabs.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/loading_overlay.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/third-party/bokeh.css') }}">
     <!-- Bokeh JS -->
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.4.3.min.js"></script>
@@ -22,7 +24,6 @@
     <script src="https://cdn.bokeh.org/bokeh/release/bokeh-api-3.4.3.min.js"></script>
 </head>
 <body>
-    <h1>Natural Language to SQL Converter</h1>
 
     {% include 'base.html' %}
 
