@@ -30,6 +30,8 @@ document.addEventListener('DOMContentLoaded', function () {
             // Handle analysis tab content loading
             if (tabId === 'chart' && tabPane.getAttribute('data-loaded') === 'false') {
 
+                showLoadingOverlay();
+
                 fetch('/generate_plots')
                     .then(response => {
 
@@ -68,6 +70,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         tabPane.innerHTML = `Error loading plot: ${error.message}`;
 
+                    })
+                    .finally(() => {
+                        hideLoadingOverlay();
                     });
             }
         }
