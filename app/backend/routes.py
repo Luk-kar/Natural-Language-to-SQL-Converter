@@ -3,7 +3,7 @@ Contains the routes for the Flask application.
 """
 
 # Flask
-from flask import render_template, request, jsonify, session
+from flask import render_template, request, jsonify, session, redirect, url_for
 
 # Flask configuration
 from app.backend.flask_configuration import MAX_ROWS_DISPLAY, flask_app
@@ -36,74 +36,86 @@ from app.backend.visualization.plot_context_selector import (
 @flask_app.route("/", methods=["GET", "POST"])
 def index():
     """
-    Starting point for the web application.
-    Handles the form submission and generates SQL queries.
+    Renders the main page and displays any previous results from the session.
     """
-
-    result = None
-
-    if request.method == "POST":
-        question = request.form["question"]
-        try:
-            schema = get_schema()
-
-            if question.strip().upper().startswith("DESCRIBE:"):
-
-                stripped_question = question.strip()[len("DESCRIBE:") :].strip()
-                description = generate_describe(schema, stripped_question)
-                result = {"question": question, "describe": description}
-
-            else:
-
-                sql = generate_sql(schema, question)
-                execution_result = execute_query(sql)
-
-                if "data" in execution_result:
-                    execution_result["data"] = execution_result["data"][
-                        :MAX_ROWS_DISPLAY
-                    ]
-
-                is_chart_possible = False
-                try:
-
-                    chart_context = build_visualization_context(execution_result)
-
-                    prompt_context = format_plot_selection_instructions(chart_context)
-                    is_chart_possible = prompt_context != NO_COMPATIBLE_PLOTS_MESSAGE
-
-                    if is_chart_possible:
-                        generate_fallback_plot_config(execution_result, chart_context)
-
-                except (ValueError, KeyError, TypeError):
-                    is_chart_possible = False
-
-                except Exception as e:
-                    is_chart_possible = False
-
-                data_valid = (
-                    "data" in execution_result
-                    and len(execution_result.get("data", [])) > 0
-                    and "error" not in execution_result,
-                )
-
-                result = {
-                    "question": question,
-                    "sql": sql,
-                    "execution": execution_result,
-                    "chart_available": data_valid and is_chart_possible,
-                }
-
-                session["result"] = result
-
-        except Exception as e:
-            result = {"error": str(e)}
-
+    result = session.get("result")
     return render_template(
         "index.html",
         result=result,
         model_name=MODEL_NAME,
         db_name=DB_CONFIG["database"],
     )
+
+
+@flask_app.route("/process_question", methods=["POST"])
+def process_question():
+    """
+    Processes the submitted question, generates SQL, executes it, and stores the result in the session.
+    """
+    result = None
+    question = request.form.get("question")
+
+    if not question:
+        result = {"error": "No question provided"}
+        session["result"] = result
+        return redirect(url_for("index"))
+
+    try:
+        schema = get_schema()
+
+        if question.strip().upper().startswith("DESCRIBE:"):
+
+            stripped_question = question.strip()[len("DESCRIBE:") :].strip()
+            description = generate_describe(schema, stripped_question)
+            result = {"question": question, "describe": description}
+
+        else:
+
+            sql = generate_sql(schema, question)
+            execution_result = execute_query(sql)
+
+            if "data" in execution_result:
+                execution_result["data"] = execution_result["data"][:MAX_ROWS_DISPLAY]
+
+            is_chart_possible = False
+
+            try:
+
+                chart_context = build_visualization_context(execution_result)
+
+                prompt_context = format_plot_selection_instructions(chart_context)
+                is_chart_possible = prompt_context != NO_COMPATIBLE_PLOTS_MESSAGE
+
+                if is_chart_possible:
+                    generate_fallback_plot_config(execution_result, chart_context)
+
+            except (ValueError, KeyError, TypeError):
+                is_chart_possible = False
+
+            except Exception as e:
+                is_chart_possible = False
+
+            data_valid = (
+                "data" in execution_result
+                and len(execution_result.get("data", [])) > 0
+                and "error" not in execution_result
+            )
+
+            result = {
+                "question": question,
+                "sql": sql,
+                "execution": execution_result,
+                "chart_available": data_valid and is_chart_possible,
+            }
+
+        session["result"] = result
+
+    except Exception as e:
+
+        result = {"error": str(e)}
+        session["result"] = result
+
+    return redirect(url_for("index"))
 
 
 @flask_app.route("/generate_plots")
