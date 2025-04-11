@@ -17,3 +17,8 @@
     background-color: #f2dede;
     border-color: #ebccd1;
 }
+
+.fallback-notice {
+    margin-top: 15px;
+    font-size: 0.9em;
+}

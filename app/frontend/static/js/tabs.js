@@ -57,7 +57,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         try {
 
-                            Bokeh.embed.embed_item(data, "chart-container");
+                            Bokeh.embed.embed_item(data.chart, "chart-container");
+
+                            // Add fallback notice if needed
+                            if (data.is_fallback) {
+                                const notice = document.createElement('div');
+                                notice.className = 'fallback-notice';
+                                notice.innerHTML = `<div class="notifications notifications-info">
+                                                    This chart was generated using an automated fallback configuration
+                                                    </div>`;
+                                tabPane.appendChild(notice);
+                            }
+
                             tabPane.setAttribute('data-loaded', 'true');
 
                         } catch (e) {

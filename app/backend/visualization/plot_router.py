@@ -154,6 +154,7 @@ def generate_plot_json(
     try:
         # First try LLM-generated config
         plot_config = create_chart_dictionary(prompt_generation_context)
+        is_fallback = False
 
     except Exception:
 
@@ -162,19 +163,29 @@ def generate_plot_json(
             plot_config = generate_fallback_plot_config(
                 execution, chart_generation_context
             )
+            is_fallback = True
 
         except ValueError as ve:
 
             if str(ve) == NO_COMPATIBLE_PLOTS_MESSAGE:
                 return jsonify({"compatible_plots_error": NO_COMPATIBLE_PLOTS_MESSAGE})
+
             else:
                 return jsonify({"error": str(ve)})
+
+        except Exception as e:
+            return {"error": str(e)}
 
     # Inject the DataFrame into arguments
     plot_config["arguments"]["data"] = df
 
     try:
+
         plot = get_plot_function(plot_config)
-        return json.dumps(json_item(plot, "chart"))
+        bokeh_json = json_item(plot, "chart")
+
+        # Return wrapper object with both Bokeh JSON and fallback flag
+        return json.dumps({"chart": bokeh_json, "is_fallback": is_fallback})
+
     except Exception as e:
         return jsonify({"error": str(e)})
