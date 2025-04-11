@@ -1,13 +1,8 @@
-/* Section styling
 .base {
-    margin-bottom: 30px;
+    width: 45%;
+    margin: 0 auto 30px auto;
     padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    border: 2px solid #e1e1e1;
+    border-radius: 15px;
+    background-color: #ffffff;
 }
-
-pre {
-    background: #f4f4f4;
-    padding: 10px;
-    overflow-x: auto;
-} */
