@@ -1,5 +1,6 @@
 # Python
 import unittest
+from unittest.mock import patch
 
 # Third-party
 from app.backend.routes import flask_app

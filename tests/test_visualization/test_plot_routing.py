@@ -198,7 +198,7 @@ class TestVisualizationGeneration(unittest.TestCase):
 
         # Verify Bokeh-compatible JSON output
         self.assertIsInstance(json.loads(result), dict)
-        self.assertIn("target_id", json.loads(result))
+        self.assertIn("target_id", json.loads(result)["chart"])
 
     @patch("app.backend.visualization.plot_router.create_chart_dictionary")
     @patch("app.backend.visualization.plot_router.generate_fallback_plot_config")

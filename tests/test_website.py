@@ -74,7 +74,11 @@ class HomepageSQLQueryTests(unittest.TestCase):
         mock_execute_query.return_value = dummy_execution
 
         # Issue a POST request with a question that triggers SQL generation.
-        response = self.app.post("/", data={"question": "Get all users"})
+        response = self.app.post(
+            "/process_question",
+            data={"question": "Get all users"},
+            follow_redirects=True,
+        )
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
 
@@ -105,13 +109,17 @@ class HomepageSQLQueryTests(unittest.TestCase):
         dummy_response = {"choices": [{"text": "This table contains user records."}]}
         mock_llm.create_completion.return_value = dummy_response
 
-        # Create POST request with a question that starts with "DESCRIBE:".
-        response = self.app.post("/", data={"question": "DESCRIBE: users table"})
+        # Create POST request with a question that starts with "DESCRIBE:" and follow redirects
+        response = self.app.post(
+            "/process_question",
+            data={"question": "DESCRIBE: users table"},
+            follow_redirects=True,
+        )
         self.assertEqual(response.status_code, 200)
-        data = response.get_data(as_text=True)
+        html = response.get_data(as_text=True)
 
         # Verify that the dummy description appears in the rendered output.
-        self.assertIn("This table contains user records.", data)
+        self.assertIn("This table contains user records.", html)
 
     @patch("app.backend.routes.get_schema", side_effect=Exception("Test error"))
     def test_post_error_handling(self, mock_get_schema):
@@ -120,7 +128,11 @@ class HomepageSQLQueryTests(unittest.TestCase):
         - The get_schema function is patched to raise an Exception.
         - The rendered output should contain the error message.
         """
-        response = self.app.post("/", data={"question": "Get all users"})
+        response = self.app.post(
+            "/process_question",
+            data={"question": "Get all users"},
+            follow_redirects=True,
+        )
         self.assertEqual(response.status_code, 200)
         data = response.get_data(as_text=True)
         self.assertIn("Test error", data)
@@ -531,7 +543,11 @@ class TestChartGeneration(unittest.TestCase):
         }
 
         # Phase 1: Submit query with mocked database
-        post_response = self.app.post("/", data={"question": "Get plot data"})
+        post_response = self.app.post(
+            "/process_question",
+            data={"question": "Get plot data"},
+            follow_redirects=True,
+        )
         self.assertEqual(post_response.status_code, 200)
 
         # Phase 2: Simulate chart tab click with valid categorical data
@@ -539,7 +555,7 @@ class TestChartGeneration(unittest.TestCase):
         self.assertEqual(get_response.status_code, 200)
 
         # Phase 3: Verify Bokeh output structure
-        response_data = json.loads(get_response.data)
+        response_data = json.loads(get_response.data)["chart"]
 
         self.assertIn("root_id", response_data)
         self.assertIn("target_id", response_data)
