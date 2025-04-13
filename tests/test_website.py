@@ -195,6 +195,11 @@ class TestChartTabAvailability(unittest.TestCase):
 
         # Issue a POST request with a question that triggers SQL generation.
         response = self.app.post("/", data={"question": "Get all users"})
+        response = self.app.post(
+            "/process_question",
+            data={"question": "Get all users"},
+            follow_redirects=True,
+        )
 
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
@@ -237,7 +242,11 @@ class TestChartTabAvailability(unittest.TestCase):
         mock_execute_query.return_value = dummy_execution
 
         # Issue POST request
-        response = self.app.post("/", data={"question": "Get non-plottable data"})
+        response = self.app.post(
+            "/process_question",
+            data={"question": "Get non-plottable data"},
+            follow_redirects=True,
+        )
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
 
@@ -279,7 +288,11 @@ class TestChartTabAvailability(unittest.TestCase):
             "data": [],  # Empty data array
         }
 
-        response = self.app.post("/", data={"question": "Get empty dataset"})
+        response = self.app.post(
+            "/process_question",
+            data={"question": "Get empty dataset"},
+            follow_redirects=True,
+        )
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
 
@@ -316,7 +329,11 @@ class TestChartTabAvailability(unittest.TestCase):
             "error": "Table 'invalid_table' doesn't exist"
         }
 
-        response = self.app.post("/", data={"question": "Get invalid data"})
+        response = self.app.post(
+            "/process_question",
+            data={"question": "Get invalid data"},
+            follow_redirects=True,
+        )
         html = response.get_data(as_text=True)
 
         # Verify error state
@@ -411,7 +428,11 @@ class TestChartTabAvailability(unittest.TestCase):
             mock_generate_plots.return_value = jsonify({"plot": plot_script})
 
             # Phase 1: Initial query submission
-            post_response = self.app.post("/", data={"question": "Get plottable data"})
+            post_response = self.app.post(
+                "/process_question",
+                data={"question": "Get plottable data"},
+                follow_redirects=True,
+            )
             self.assertEqual(post_response.status_code, 200)
             post_html = post_response.get_data(as_text=True)
 
