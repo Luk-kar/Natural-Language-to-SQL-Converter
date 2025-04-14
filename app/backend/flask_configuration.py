@@ -12,7 +12,9 @@ from flask import Flask
 template_folder = os.path.join(os.path.dirname(__file__), "..", "frontend", "templates")
 static_folder = os.path.join(os.path.dirname(__file__), "..", "frontend", "static")
 flask_app = Flask(
-    __name__, template_folder=template_folder, static_folder=static_folder
+    __name__,
+    template_folder=template_folder,
+    static_folder=static_folder,
 )
 flask_app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24))  # Secret key
 

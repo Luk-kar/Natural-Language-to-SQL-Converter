@@ -1,5 +1,6 @@
 function setQuestion(query) {
     document.getElementById('questionInput').value = query;
+    document.querySelector('form').submit();
 }
 
 document.addEventListener('DOMContentLoaded', function () {

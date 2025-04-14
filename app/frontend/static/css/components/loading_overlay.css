@@ -9,7 +9,7 @@
     display: none;
     justify-content: center;
     align-items: center;
-    pointer-events: none;
+    pointer-events: all;
   }
   
   .spinner {
