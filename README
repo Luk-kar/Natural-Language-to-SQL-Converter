@@ -1,0 +1,19 @@
+# 🔎🤖 Natural Language to SQL Converter
+
+This repository provides an open-source environment for developers to experiment with LLM-based tools. It includes a server setup to use various models, and sample code demonstrating how to integrate large language models into your applications.
+
+## Installation
+1. Clone this repository.
+2. Install the necessary dependencies.
+3. Run the provided scripts to set up the environment.
+
+## Usage
+1. Start the server using the included startup script.
+2. Point your client application to the server URL.
+3. Send requests to the API endpoints for model inference.
+
+## Contributing
+Contributions are welcome. Submit pull requests or open issues to improve this project.
+
+## License
+This project is licensed under the MIT License. See the LICENSE file for more details.
