@@ -2,18 +2,104 @@
 
 This repository provides an open-source environment for developers to experiment with LLM-based tools. It includes a server setup to use various models, and sample code demonstrating how to integrate large language models into your applications.
 
-## Installation
+For demonstration purposes the pokemon dataset was used from:
+https://github.com/lgreski/pokemonData/blob/master/Pokemon.csv
+
+The app contains features like:
+- asking in natural language questions to retrieve the results from the database
+- generating plot to visualize data from the predefined plots
+- fallback to automate selecting data based on the data
+- description provided in natural language from the LLM based on the input
+- llm generated tooltips for the query parts
+
+![generated query](doc/images/generated_query.png)
+![generated plot](doc/images/generated_query.png)
+![generated tooltips](doc/images/generated_query.png)
+
+## 🗂️ Project Structure
+
+![data_pipeline](doc/images/data_pipeline.png)
+
+### 📚 Key Libraries
+
+**Backend:**
+
+- [**`flask:`**](https://developers.google.com/earth-engine/guides/python_install)
+
+  _Tools for working with geographic data API on Google Earth Engine._
+
+- [**`gunicorn:`**](https://developers.google.com/earth-engine/guides/python_install)
+
+  _Tools for working with geographic data API on Google Earth Engine._
+
+- [**`psycopg2-binary:`**](https://developers.google.com/earth-engine/guides/python_install)
+
+  _Tools for working with geographic data API on Google Earth Engine._
+
+**Backend:**
+
+- [**`llama-cpp-python:`**](https://developers.google.com/earth-engine/guides/python_install)
+
+  _Tools for working with geographic data API on Google Earth Engine._
+
+**Visualization:**
+
+- [**`bokeh:`**](https://developers.google.com/earth-engine/guides/python_install)
+
+  _Tools for working with geographic data API on Google Earth Engine._
+
+- [**`pandas:`**](https://developers.google.com/earth-engine/guides/python_install)
+
+  _Tools for working with geographic data API on Google Earth Engine._
+
+- [**`scipy`**](https://developers.google.com/earth-engine/guides/python_install)
+
+  _Tools for working with geographic data API on Google Earth Engine._
+
+- [**`squarify`**](https://developers.google.com/earth-engine/guides/python_install)
+
+  _Tools for working with geographic data API on Google Earth Engine._
+
+- [**`colorcet`**](https://developers.google.com/earth-engine/guides/python_install)
+
+  _Tools for working with geographic data API on Google Earth Engine._
+
+## 📦 Requirements
+
+See the:
+- [`requirements.txt`](requirements.txt) for needed packages for llm backend.
+- [`docker-compose.yml`](docker-compose.yml) for services.
+
+## ⚙️ Installation
 1. Clone this repository.
 2. Install the necessary dependencies.
 3. Run the provided scripts to set up the environment.
+4. Get the llm
 
-## Usage
+## 🔧 Configuration
+
+?
+
+## 🔨 Usage
 1. Start the server using the included startup script.
 2. Point your client application to the server URL.
 3. Send requests to the API endpoints for model inference.
 
-## Contributing
-Contributions are welcome. Submit pull requests or open issues to improve this project.
+## ✅ Testing
 
-## License
-This project is licensed under the MIT License. See the LICENSE file for more details.
+To test, activate the environment and run tests:
+
+```bash
+pipenv shell
+python -m unittest discover
+```
+---
+
+## 💡 Notes
+?
+
+## 🧩 Contributing
+This project is just as beginning
+
+## 📜 License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
