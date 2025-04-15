@@ -35,6 +35,7 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER_READONLY: ${DB_USER_READONLY}
       DB_PASSWORD_READONLY: ${DB_PASSWORD_READONLY}
+      LLM_MODEL_NAME: ${LLM_MODEL_NAME}
     depends_on:
       - postgres_nl2sql
     volumes:

@@ -1,4 +1,5 @@
 function setQuestion(query) {
+    showLoadingOverlay();
     document.getElementById('questionInput').value = query;
     document.querySelector('form').submit();
 }

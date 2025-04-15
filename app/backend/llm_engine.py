@@ -15,8 +15,11 @@ from llama_cpp import Llama
 from app.backend.sql_parser import extract_sql
 
 # Model Configuration
-# MODEL_NAME = "deepseek-coder-6.7b-instruct.Q4_K_M"
-MODEL_NAME = "ggml-model-Q4_K_M"
+MODEL_NAME = os.getenv("LLM_MODEL_NAME")
+if not MODEL_NAME:
+    raise ValueError(
+        "LLM_MODEL_NAME environment variable is not set. Please set it to the name of your model."
+    )
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", f"{MODEL_NAME}.gguf")
 
 LLM = None

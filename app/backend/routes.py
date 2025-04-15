@@ -46,17 +46,26 @@ def index():
 
     trouble_chars_pattern = r"[\'\"\\\{\}%#]"
 
-    sample_questions = [
-        "Where does 'John Doe' live?",
-        "Show me all customers from New York.",
-        "DESCRIBE: What is the structure of the database?",
+    pokemon_questions = [
+        "How many Pokémon have Type1 = 'Fire'?",
+        "Which Pokémon has the highest Total stat?",
+        "What is the average HP of all Pokémon in Generation 1?",
+        "How many Pokémon are dual-type (have both Type1 and Type2)?",
+        "What is the average Speed of all Pokémon?",
+        "What is the max Attack stat among Grass-type Pokémon?",
+        "How many Pokémon have Type2 = 'Flying'?",
+        "What is the average Sp. Def of Fire-type Pokémon?",
+        "Which Pokémon has the lowest Defense stat?",
+        "How many Pokémon are in each Generation?",
+        "Which Pokémon have Sp. Atk > 100?",
+        "How many Pokémon have a Total stat above 500?",
     ]
 
-    if not sample_questions:
+    if not pokemon_questions:
         raise ValueError("No sample questions set.")
 
     sanitized_questions = [
-        re.sub(trouble_chars_pattern, "", question) for question in sample_questions
+        re.sub(trouble_chars_pattern, "", question) for question in pokemon_questions
     ]
 
     return render_template(

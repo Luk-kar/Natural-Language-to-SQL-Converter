@@ -35,45 +35,75 @@ psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO ${DB_USER_READONLY};
 EOSQL
 
-echo "Creating customers table..."
+echo "Creating pokemon table..."
 psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    CREATE TABLE customers (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100),
-        email VARCHAR(100),
-        city VARCHAR(50)
+    CREATE TABLE pokemon (
+        id_universal SERIAL PRIMARY KEY,
+        id_pokemon INTEGER NOT NULL,
+        Name VARCHAR(255),
+        Form VARCHAR(255),
+        Type1 VARCHAR(255),
+        Type2 VARCHAR(255),
+        Total INTEGER,
+        HP INTEGER,
+        Attack INTEGER,
+        Defense INTEGER,
+        "Sp. Atk" INTEGER,
+        "Sp. Def" INTEGER,
+        Speed INTEGER,
+        Generation INTEGER
     );
 EOSQL
 
 echo "Adding column comments context..."
 psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    COMMENT ON COLUMN customers.id IS 'A unique identifier for the customer.';
-    COMMENT ON COLUMN customers.name IS 'Stores the customer''s full name, can be non-unique. Note that in many cultures the name may be composed differently or may not clearly split into "first" and "last" components.';
-    COMMENT ON COLUMN customers.email IS 'A unique identifier for the customer.';
-    COMMENT ON COLUMN customers.city IS 'A categorical variable, meaning it belongs to a finite set of possible values (e.g., "New York", "London", "Paris").';
+    COMMENT ON COLUMN pokemon.id_universal IS 'Unique auto-incrementing identifier for each Pokémon entry';
+    COMMENT ON COLUMN pokemon.id_pokemon IS 'Original Pokémon ID from game data (may have duplicates for different forms)';
+    COMMENT ON COLUMN pokemon.Name IS 'The name of the Pokémon species. Names are unique per species but may vary by form.';
+    COMMENT ON COLUMN pokemon.Form IS 'Specific form or variant (e.g., Mega Evolution, Regional Form). Empty indicates base form.';
+    COMMENT ON COLUMN pokemon.Type1 IS 'Primary elemental type (e.g., Grass, Fire, Water) determining combat strengths/weaknesses.';
+    COMMENT ON COLUMN pokemon.Type2 IS 'Secondary elemental type. Empty indicates single-type Pokémon.';
+    COMMENT ON COLUMN pokemon.Total IS 'Sum of all base stats (HP, Attack, Defense, Sp. Atk, Sp. Def, Speed).';
+    COMMENT ON COLUMN pokemon.HP IS 'Base health points indicating damage tolerance before fainting.';
+    COMMENT ON COLUMN pokemon.Attack IS 'Base physical attack strength for damage calculation.';
+    COMMENT ON COLUMN pokemon.Defense IS 'Base physical damage resistance against opponent attacks.';
+    COMMENT ON COLUMN pokemon."Sp. Atk" IS 'Base special attack power for non-physical moves.';
+    COMMENT ON COLUMN pokemon."Sp. Def" IS 'Base resistance against special move damage.';
+    COMMENT ON COLUMN pokemon.Speed IS 'Determines turn order in battles. Higher values act first.';
+    COMMENT ON COLUMN pokemon.Generation IS 'Game generation (1-7+) when the Pokémon was introduced.';
 EOSQL
 
-echo "Inserting initial sample data (3 records)..."
+echo "Loading data from CSV..."
 psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    INSERT INTO customers (name, email, city)
-    VALUES
-        ('John Doe', 'john@example.com', 'New York'),
-        ('Jane Smith', 'jane@example.com', 'London'),
-        ('Bob Wilson', 'bob@example.com', 'Paris');
-EOSQL
-
-echo "Generating 100 additional sample records..."
-psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    INSERT INTO customers (name, email, city)
-    SELECT
-        'Customer ' || gs,
-        'customer' || gs || '@example.com',
-        CASE
-            WHEN gs % 3 = 0 THEN 'New York'
-            WHEN gs % 3 = 1 THEN 'London'
-            ELSE 'Paris'
-        END
-    FROM generate_series(1, 100) AS gs;
+    COPY pokemon (
+        id_pokemon, 
+        Name, 
+        Form, 
+        Type1, 
+        Type2, 
+        Total, 
+        HP, 
+        Attack, 
+        Defense, 
+        "Sp. Atk", 
+        "Sp. Def", 
+        Speed, 
+        Generation
+    )
+    FROM '/data/pokemon.csv'
+    WITH (FORMAT CSV, HEADER, FORCE_NOT_NULL (id_pokemon));
+    
+    DO \$\$
+    BEGIN
+        IF (SELECT COUNT(*) FROM pokemon) = 0 THEN
+            RAISE EXCEPTION 'No data loaded from CSV file';
+        END IF;
+        
+        -- Verify the ID column was properly mapped
+        IF NOT EXISTS (SELECT 1 FROM pokemon WHERE id_pokemon IS NOT NULL) THEN
+            RAISE EXCEPTION 'id_pokemon column contains only NULL values - CSV mapping may be incorrect';
+        END IF;
+    END \$\$;
 EOSQL
 
 echo "Database initialization completed successfully!"

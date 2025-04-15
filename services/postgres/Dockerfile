@@ -17,7 +17,10 @@ ENV DB_NAME=${DB_NAME}
 
 # Copy the SQL template and the entrypoint script into the init directory
 COPY init.sh /docker-entrypoint-initdb.d/init.sh
+COPY data/pokemon.csv /data/pokemon.csv
 
 # Set permissions
-RUN chmod +x /docker-entrypoint-initdb.d/init.sh && \
-    chown -R postgres:postgres /docker-entrypoint-initdb.d/
+RUN mkdir -p /data && \
+    chmod +x /docker-entrypoint-initdb.d/init.sh && \
+    chown -R postgres:postgres /docker-entrypoint-initdb.d/ && \
+    chown postgres:postgres /data/pokemon.csv
