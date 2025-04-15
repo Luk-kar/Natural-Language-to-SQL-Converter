@@ -2,6 +2,9 @@
 Contains the routes for the Flask application.
 """
 
+# Python
+import re
+
 # Flask
 from flask import render_template, request, jsonify, session, redirect, url_for
 
@@ -39,11 +42,30 @@ def index():
     Renders the main page and displays any previous results from the session.
     """
     result = session.get("result")
+    last_question = session.pop("last_question", None)
+
+    trouble_chars_pattern = r"[\'\"\\\{\}%#]"
+
+    sample_questions = [
+        "Where does 'John Doe' live?",
+        "Show me all customers from New York.",
+        "DESCRIBE: What is the structure of the database?",
+    ]
+
+    if not sample_questions:
+        raise ValueError("No sample questions set.")
+
+    sanitized_questions = [
+        re.sub(trouble_chars_pattern, "", question) for question in sample_questions
+    ]
+
     return render_template(
         "index.html",
         result=result,
+        last_question=last_question,
         model_name=MODEL_NAME,
         db_name=DB_CONFIG["database"],
+        sample_questions=sanitized_questions,
     )
 
 
@@ -54,6 +76,7 @@ def process_question():
     """
     result = None
     question = request.form.get("question")
+    session["last_question"] = question
 
     if not question:
         result = {"error": "No question provided"}

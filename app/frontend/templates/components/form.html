@@ -1,16 +1,16 @@
 <form method="POST" action="/process_question" style="position: relative;">
     <h3>Ask a Question:</h3>
     <div style="position: relative; display: flex; align-items: center;">
-        <input id="questionInput" type="text" name="question" placeholder="e.g. Show me all customers from New York" required>
+        <input id="questionInput" type="text" name="question" value="{{ last_question if last_question else (result.question if result else '') }}" placeholder="e.g. Show me all customers from New York" required>
         <img src="/static/images/magnifying-glass.svg"
         alt="Search" style="position: absolute; right: 10px; width: 18px; height: 18px; pointer-events: none; opacity: 0.35;">
     </div>
     <button type="submit">Get answer!</button>
     <div class="try-queries">
         <h3>Try these queries:</h3>
-        <button type="button" onclick="setQuestion('Where does \'John Doe\' live?')">Where does 'John Doe' live?</button>
-        <button type="button" onclick="setQuestion('Show me all customers from New York.')">Show me all customers from New York.</button>
-        <button type="button" onclick="setQuestion('DESCRIBE: What is the structure of the database?')">DESCRIBE: What is the structure of the database?</button>
+        {% for question in sample_questions %}
+            <button type="button" onclick="setQuestion('{{ question }}')">{{ question }}</button>
+        {% endfor %}
         <p></p>
     </div>
 </form>
