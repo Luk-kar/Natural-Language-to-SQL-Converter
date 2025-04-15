@@ -38,9 +38,6 @@ services:
       LLM_MODEL_NAME: ${LLM_MODEL_NAME}
     depends_on:
       - postgres_nl2sql
-    volumes:
-      # Mount the model file from the host into the container
-      - ./app/backend/models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf:/app/backend/models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf:ro
 
 volumes:
   pgdata:
