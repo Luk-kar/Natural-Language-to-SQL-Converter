@@ -4,7 +4,7 @@ This repository provides a system for retrieving data from a database using quer
 
 It offers an open-source environment for experimenting with LLM-powered database search. It includes a server setup for running different models, sample code for integrating them into applications, and a Postgres service as the database.
 
-For demonstration purposes, the [Pokémon dataset](https://github.com/lgreski/pokemonData/blob/master/Pokemon.csv) was used.
+For demonstration purposes, the <a href="https://github.com/lgreski/pokemonData/blob/master/Pokemon.csv"><img src="doc/images/pokemon-logo.svg" alt="Pokémon" height="25"></a> dataset was used.
 
 Key features of the application include:
 - Querying the database using natural language input.
@@ -143,6 +143,10 @@ This project is a starting point—many improvements can be implemented:
 - **Backend Optimization:** Profile and reduce CPU/memory usage during LLM inference and database queries.  
 - **Production Hardening:** Improve security, error handling, and user experience for real-world deployments.  
 - **Streamlined Setup:** Automate and simplify installation, configuration, and deployment.
+
+## Acknowledgments 👍
+
+- Special thanks to **[Larry Greski](https://github.com/lgreski)** for curating and sharing the [Pokémon dataset](https://github.com/lgreski/pokemonData/blob/master/Pokemon.csv), which was used for demonstration and development purposes in this project.
 
 ## 📜 License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
