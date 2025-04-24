@@ -458,7 +458,7 @@ class TestChartTabAvailability(unittest.TestCase):
         self.assertIn("bokeh-api-3.4.3.min.js", post_html)
 
         # Verify plot container structure
-        self.assertIn('<div id="chart-container"></div>', plot_html)
+        self.assertIn('<div id="chart-container" ', plot_html)
 
         # Check data-loaded flag update (would be set by JS in real usage)
         self.assertIn('data-loaded="false"', plot_html)  # Initial state
