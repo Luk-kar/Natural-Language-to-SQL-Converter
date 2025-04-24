@@ -1,6 +1,8 @@
 # 🔎🤖 Natural Language to SQL Converter
 
-This repository offers an open-source environment for experimenting with LLM-powered database search. It includes a server setup for running different models, sample code for integrating them into applications, and a Postgres service as the database.
+This repository provides a system for retrieving data from a database using queries written in natural language.
+
+It offers an open-source environment for experimenting with LLM-powered database search. It includes a server setup for running different models, sample code for integrating them into applications, and a Postgres service as the database.
 
 For demonstration purposes, the [Pokémon dataset](https://github.com/lgreski/pokemonData/blob/master/Pokemon.csv) was used.
 
