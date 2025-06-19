@@ -101,7 +101,6 @@ See:
    ```
    - PostgreSQL will initialize the `pokemon` table and load the CSV dataset.  
    - The Flask‐Gunicorn backend will be built and started on `0.0.0.0:${FLASK_RUN_PORT}`.
-   - 
 4. **Verify everything is running**  
    ```bash
    # List running containers
